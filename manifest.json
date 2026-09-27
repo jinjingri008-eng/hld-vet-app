@@ -1,0 +1,39 @@
+{
+  "name": "犬猫临床应用场景选品工具",
+  "short_name": "犬猫选品",
+  "description": "犬猫临床场景选品 · AI 产品介绍 · 用法用量与思维导图",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F1EA",
+  "theme_color": "#0F6B5C",
+  "lang": "zh-CN",
+  "categories": ["medical", "business", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
