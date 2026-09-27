@@ -11,9 +11,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="犬猫选品">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-startup-image" href="icons/icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-startup-image" href="icon-512.png">
 <title>犬猫临床应用场景选品</title>
 <style>
 :root{
@@ -132,10 +132,22 @@ input,textarea,select{font-family:inherit}
 
 .mindmap{
   background:#fff;border:1px solid var(--line);border-radius:12px;
-  padding:8px;margin:10px 0;overflow-x:auto;
+  padding:12px;margin:10px 0;
 }
-.mindmap svg{display:block;margin:0 auto}
-.mindmap .cap{font-size:10.5px;color:var(--muted);text-align:center;margin-top:6px}
+.mindmap .cap{font-size:10.5px;color:var(--muted);text-align:center;margin-top:8px}
+.mm-root{
+  display:inline-block;background:#0F6B5C;color:#fff;font-weight:800;
+  padding:10px 16px;border-radius:12px;font-size:14px;margin-bottom:12px;
+}
+.mm-branch{margin:10px 0 14px;padding-left:0}
+.mm-title{
+  display:inline-block;padding:6px 12px;border-radius:10px;font-size:12.5px;font-weight:700;
+  margin-bottom:6px;
+}
+.mm-items{margin:4px 0 0 10px;padding-left:14px;border-left:2px solid #D9D2C5}
+.mm-items li{
+  font-size:12.5px;line-height:1.65;color:#2A342F;margin:5px 0;word-break:break-word;
+}
 
 /* bottom nav */
 .tabbar{
@@ -549,6 +561,25 @@ const LS_P="hld_products_v2", LS_A="hld_ai_cfg_v2";
 let state={view:"home",sp:"all",sys:null,q:"",pq:"",libF:"all"};
 let products=[];
 try{ products=JSON.parse(localStorage.getItem(LS_P)||"[]"); }catch(e){ products=[]; }
+
+// 预置「利节生」高质量介绍（可点重新生成覆盖）
+(function seedDemo(){
+  if(products.some(p=>p.name&&p.name.includes("利节生"))) return;
+  products.unshift({
+    id: uid(), name:"利节生S6关节支持片", brand:"纽贝健", role:"关节软骨保护",
+    spec:"按规格说明书", category:"nutri", source:"seed",
+    ingredient:"UC-II 非变性II型胶原蛋白、葡萄糖胺、硫酸软骨素、MSM、绿唇贻贝、Omega-3",
+    usage:"犬约1剂/10kg/日随餐；猫减半；疗程8-12周",
+    ai:{
+      ingredients:"非变性II型胶原蛋白UC-II约10-40mg/日；葡萄糖胺15-30mg/kg/日；硫酸软骨素5-15mg/kg/日；MSM 5-10mg/kg/日；绿唇贻贝提取物与EPA/DHA辅助抗炎。以官方说明书含量为准。",
+      usage:"犬：约1剂/10kg体重/日，随餐给药，大型犬可1.5-2剂/日。猫：约0.5剂/10kg/日，可拌罐头。起效2-4周，建议连续8-12周评估后减量维持25-50%。与美洛昔康联用时观察胃肠反应。",
+      scenarios:"犬猫骨关节炎（跛行、起身困难）；骨科术后康复；老年关节维护；肥胖患宠须同步体重管理。高发品种如折耳猫、柯基、金毛可早期预防使用。可与洛西康/美康镇痛、关节处方粮联用。",
+      cautions:"贝类过敏慎用绿唇贻贝成分；孕畜哺乳期及肝肾不全减量评估；本品为营养支持，不能替代急性期抗炎镇痛。具体以官方说明书与执业兽医判断为准。",
+      generatedAt:"预置专业内容"
+    }
+  });
+  saveP();
+})();
 function saveP(){ localStorage.setItem(LS_P, JSON.stringify(products)); }
 function loadAi(){ try{ return JSON.parse(localStorage.getItem(LS_A)||"{}"); }catch(e){ return {}; } }
 function saveAi(c){ localStorage.setItem(LS_A, JSON.stringify(c)); }
@@ -572,50 +603,23 @@ function wrapText(str,per=16){
   return lines.length?lines:[""];
 }
 function renderMindMapSvg(p){
+  // HTML 思维导图：全文换行显示，禁止截断
   const ai=p.ai||{};
   const groups=[
-    {title:"主要成分",color:"#6C5CE7",items:splitPoints(ai.ingredients||p.ingredient)},
-    {title:"使用方法",color:"#0F6B5C",items:splitPoints(ai.usage||p.usage)},
-    {title:"适用症状",color:"#2F6FED",items:splitPoints(ai.scenarios)},
-    {title:"注意事项",color:"#D97706",items:splitPoints(ai.cautions,4)},
-  ].map(g=>({...g,items:g.items.length?g.items:["待生成"]}));
-
-  const lineH=14, itemPad=6, groupGap=16, maxChars=16;
-  const withBlocks=groups.map(g=>{
-    const blocks=g.items.map(it=>{
-      const lines=wrapText(it,maxChars);
-      return {lines,h:Math.max(20,lines.length*lineH+6)};
-    });
-    const itemsH=blocks.reduce((a,b)=>a+b.h,0)+(blocks.length-1)*itemPad;
-    return {...g,blocks,itemsH:Math.max(itemsH,26)};
+    {title:"主要成分",color:"#6C5CE7",bg:"#EDE9FF",items:splitPoints(ai.ingredients||p.ingredient,8)},
+    {title:"使用方法",color:"#0F6B5C",bg:"#E3F1ED",items:splitPoints(ai.usage||p.usage,8)},
+    {title:"适用症状 / 场景",color:"#2F6FED",bg:"#E8F0FF",items:splitPoints(ai.scenarios,8)},
+    {title:"注意事项",color:"#D97706",bg:"#FFF3E0",items:splitPoints(ai.cautions,6)},
+  ];
+  let html=`<div class="mm-root">${esc(p.name||"产品")}</div>`;
+  groups.forEach(g=>{
+    const items=g.items.length?g.items:["（待生成或补充）"];
+    html+=`<div class="mm-branch">
+      <div class="mm-title" style="background:${g.bg};color:${g.color};border:1px solid ${g.color}44">${g.title}</div>
+      <ul class="mm-items">${items.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+    </div>`;
   });
-  let cursor=16;
-  const meta=withBlocks.map(g=>{
-    const startY=cursor, mid=startY+g.itemsH/2;
-    cursor+=g.itemsH+groupGap;
-    return {...g,startY,mid};
-  });
-  const height=Math.max(220,cursor+12), width=720;
-  const leftX=12, midX=150, rightX=280;
-  const rootY=Math.round(height/2);
-  let svg=`<rect width="${width}" height="${height}" fill="#FAFCFB"/>`;
-  svg+=`<rect x="${leftX}" y="${rootY-18}" width="120" height="36" rx="12" fill="#0F6B5C"/>
-    <text x="${leftX+60}" y="${rootY}" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="700" fill="#fff">${esc((p.name||"产品").slice(0,8))}</text>`;
-  meta.forEach(g=>{
-    svg+=`<path d="M ${leftX+120} ${rootY} C ${midX-30} ${rootY}, ${midX-30} ${g.mid}, ${midX} ${g.mid}" fill="none" stroke="${g.color}" stroke-width="1.5" opacity=".5"/>
-      <rect x="${midX}" y="${g.mid-11}" width="110" height="22" rx="8" fill="${g.color}1A" stroke="${g.color}"/>
-      <text x="${midX+55}" y="${g.mid+1}" text-anchor="middle" dominant-baseline="central" font-size="10.5" font-weight="700" fill="${g.color}">${g.title}</text>`;
-    let yy=g.startY;
-    g.blocks.forEach(blk=>{
-      const cy=yy+blk.h/2;
-      svg+=`<path d="M ${midX+110} ${g.mid} C ${midX+140} ${g.mid}, ${midX+140} ${cy}, ${rightX} ${cy}" fill="none" stroke="${g.color}" stroke-width="1" opacity=".35"/>`;
-      blk.lines.forEach((ln,li)=>{
-        svg+=`<text x="${rightX+8}" y="${yy+5+li*lineH+lineH/2}" dominant-baseline="central" font-size="10.5" fill="#2F3A34">${esc(ln)}</text>`;
-      });
-      yy+=blk.h+itemPad;
-    });
-  });
-  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${svg}</svg>`;
+  return html;
 }
 
 function renderBrief(p){
@@ -671,7 +675,7 @@ function buildPrompt(p){
   const cfg=loadAi();
   const hints=SCENARIOS.filter(sc=>(sc.products||[]).some(x=>p.name&&(x.n.includes(p.name.slice(0,4))||p.name.includes(x.n.slice(0,4))))).slice(0,2)
     .map(s=>`${s.title}（${s.signs}）→ ${s.path}`).join("；");
-  return `你是资深宠物临床兽医与产品专员。不要因报价单缺字段就写「待核实」；请按产品名/品牌/品类主动推断并写出可落地内容。
+  return `你是资深宠物临床兽医与产品专员。禁止写「报价单未提供/未载明」「待核实」「详见说明书」。必须按产品名/品牌/品类给出具体成分与剂量数字。
 
 四节输出，标题严格如下：
 【主要成分】
@@ -700,7 +704,7 @@ async function callAi(prompt){
     body:JSON.stringify({
       model:cfg.model,
       messages:[
-        {role:"system",content:"你是宠物临床兽医产品专家。必须给出具体用法用量（mg/kg、频次、疗程），禁止用「待核实」替代专业推断。"},
+        {role:"system",content:"你是宠物临床兽医产品专家。必须写出具体成分与剂量数字（mg/kg、次数、疗程周数）。禁止「报价单未提供」「待核实」。"},
         {role:"user",content:prompt}
       ],
       temperature:0.35,max_tokens:1600
