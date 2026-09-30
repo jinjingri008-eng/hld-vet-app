@@ -1,5 +1,5 @@
-/* 犬猫临床应用场景选品 · Service Worker */
-const CACHE = 'hld-vet-app-v3';
+﻿/* 鐘尗涓村簥搴旂敤鍦烘櫙閫夊搧 路 Service Worker */
+const CACHE = 'hld-vet-app-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -30,7 +30,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   const isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html') || req.url.endsWith('/');
-  // 页面 HTML：网络优先，保证产品库更新能立刻生效
+  // 椤甸潰 HTML锛氱綉缁滀紭鍏堬紝淇濊瘉浜у搧搴撴洿鏂拌兘绔嬪埢鐢熸晥
   if (isHTML) {
     e.respondWith(
       fetch(req)
@@ -43,7 +43,7 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  // 其它静态资源：缓存优先，后台更新
+  // 鍏跺畠闈欐€佽祫婧愶細缂撳瓨浼樺厛锛屽悗鍙版洿鏂?
   e.respondWith(
     caches.match(req).then((hit) => {
       const net = fetch(req)
@@ -59,3 +59,4 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+

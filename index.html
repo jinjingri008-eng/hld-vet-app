@@ -146,7 +146,7 @@ input,textarea,select{font-family:inherit}
 .sc-body-map .zone-legend{
   display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;
 }
-.sc-body-map svg{width:100%;height:auto;display:block;max-width:100%;min-height:220px}
+.sc-body-map svg{width:100%;height:auto;display:block;max-width:100%;min-height:280px}
 @media (min-width:400px){
   .sc-body-map svg{min-height:260px}
 }
@@ -801,7 +801,7 @@ function renderDetailAnatomy(opts){
   const on=(k)=>systems.includes(k);
   const fill=(ok,base)=> ok ? base : "#E8E2D6";
   const stroke=(ok,base)=> ok ? base : "#C9C0B0";
-  const sw=(ok)=> ok ? 2.2 : 1;
+  const sw=(ok)=> ok ? 3.2 : 1.2;
 
   function animalSvg(kind){
     const isCat=kind==="cat";
@@ -1306,10 +1306,11 @@ function productScenarioList(prod, q){
   return SCENARIOS.filter(sc=>scenarioHasProduct(sc, prod, q||prod.name));
 }
 
-function scCard(sc){
+function scCard(sc, expandAnatomy){
   const s=SYSTEMS[sc.sys]||{name:"",color:"#888",icon:""};
   const spL=sc.sp==="dog"?"犬":sc.sp==="cat"?"猫":"犬猫";
   const spC=sc.sp==="dog"?"dog":sc.sp==="cat"?"cat":"both";
+  const anatomy=expandAnatomy?`<div style="margin-top:8px">${renderScenarioBodyMap(sc)}</div>`:"";
   return `<div class="card" data-sc="${sc.id}">
     <div class="tags">
       <span class="tag ${spC}">${spL}</span>
@@ -1319,9 +1320,16 @@ function scCard(sc){
     <div class="row-l"><b>症状：</b>${sc.signs}</div>
     <div class="row-l"><b>检测：</b>${sc.dx}</div>
     <div class="path"><b>治疗路径：</b>${sc.path}</div>
+    ${anatomy}
   </div>`;
 }
 
+function scrollToAnatomy(){
+  setTimeout(()=>{
+    const el=document.querySelector('.sc-body-map');
+    if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'});
+  },120);
+}
 function bindScCards(root){
   root.querySelectorAll("[data-sc]").forEach(el=>{
     el.onclick=()=>openScenarioSheet(el.dataset.sc);
@@ -1392,8 +1400,9 @@ function renderHome(){
   }else{
     head=`<div class="sec-title" style="margin-top:14px">临床应用场景</div>`;
   }
-  scBox.innerHTML=head+(list.length?list.slice(0,12).map(scCard).join(""):(prod2?"":`<div class="empty">没有匹配场景</div>`));
+  scBox.innerHTML=head+(list.length?list.slice(0,12).map((sc,i)=>scCard(sc, !!prod2 && i===0)).join(""):(prod2?"":`<div class="empty">没有匹配场景</div>`));
   bindScCards(scBox);
+  if(prod2) scrollToAnatomy();
 }
 
 function renderScenarios(){
@@ -1413,8 +1422,9 @@ function renderScenarios(){
       <div class="hint" style="margin:0 0 10px">已按产品过滤，仅显示该产品相关临床场景</div>`;
     if(!list.length) head+=`<div class="empty">暂无内置场景，点产品库生成作用机理</div>`;
   }
-  box.innerHTML=head+(list.length?list.map(scCard).join(""):(prod3?"":`<div class="empty">没有匹配场景</div>`));
+  box.innerHTML=head+(list.length?list.map((sc,i)=>scCard(sc, !!prod3 && (i===0||list.length<=2))).join(""):(prod3?"":`<div class="empty">没有匹配场景</div>`));
   bindScCards(box);
+  if(prod3) scrollToAnatomy();
 }
 
 function renderProducts(){
