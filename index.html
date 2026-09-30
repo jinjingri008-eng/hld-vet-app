@@ -154,6 +154,12 @@ input,textarea,select{font-family:inherit}
 .mech-box .b{font-size:12.5px;line-height:1.75}
 .zone-legend .anno{font-size:11px;padding:4px 10px}
 
+/* 教材挂图面板 */
+.poster-grid{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.poster-grid .poster-panel{
+  flex:1 1 300px;min-width:280px;max-width:100%;height:auto;display:block;
+  border-radius:8px;box-shadow:0 2px 10px rgba(43,95,158,.12);
+}
 /* 犬猫解剖示意图 */
 .body-map{
   background:#FFFCF7;border:1px solid var(--line);border-radius:12px;
@@ -791,6 +797,30 @@ function detectSystems(p){
 
 
 
+function labelLayer(isCat){
+  const L=[
+    [85,70,25,28,"颅骨"],
+    [230,64,250,18,"脊柱"],
+    [250,110,250,175,"肋骨"],
+    [145,88,100,20,"肩胛骨"],
+    [330,108,380,25,"髋骨"],
+    [145,112,70,125,"肩关节"],
+    [135,150,75,160,"肘关节"],
+    [330,108,395,120,"髋关节"],
+    [315,155,385,160,"膝关节"],
+    [325,195,385,205,"踝关节"],
+    [348,85,410,55,isCat?"尾椎":"尾"],
+  ];
+  let s="";
+  for (let i=0;i<L.length;i++){
+    const x1=L[i][0],y1=L[i][1],x2=L[i][2],y2=L[i][3],t=L[i][4];
+    const anchor=(x2>250)?"start":"end";
+    s+="<line x1=\""+x1+"\" y1=\""+y1+"\" x2=\""+x2+"\" y2=\""+y2+"\" stroke=\"#2B5F9E\" stroke-width=\"1\" opacity=\"0.75\"/>";
+    s+="<circle cx=\""+x1+"\" cy=\""+y1+"\" r=\"2.2\" fill=\"#2B5F9E\"/>";
+    s+="<text x=\""+x2+"\" y=\""+y2+"\" fill=\"#1E4A80\" font-size=\"11\" font-weight=\"600\" font-family=\"PingFang SC,Microsoft YaHei,sans-serif\" text-anchor=\""+anchor+"\">"+t+"</text>";
+  }
+  return s;
+}
 function renderDetailAnatomy(opts){
   const systems=opts.systems||[];
   const title=opts.title||"作用部位";
@@ -799,60 +829,108 @@ function renderDetailAnatomy(opts){
   const showDog=opts.dog!==false;
   const showCat=opts.cat!==false;
   const on=(k)=>systems.includes(k);
-  const isJoint=on("joint")||on("bone");
-  const isResp=on("lung")||on("trachea")||on("nose");
-  const isGi=on("stomach")||on("intestine");
-  const isUro=on("kidney")||on("bladder");
-  const isHeart=on("heart");
-  const isSkin=on("skin");
-  const isEye=on("eye");
+  const J=on("joint")||on("bone");
+  const B="#F0D9A8", BS="#A88455", JF=J?"#FFD24A":"#E8D0A8", JS=J?"#C48A10":"#A88455";
+  const hot=(x)=>x?1:0.35;
 
-  // 精修教材图：关节版或底图
-  const dogSrc=isJoint?"img/dog-joints.png":"img/dog-anatomy-clean.jpg";
-  const catSrc="img/cat-skeleton.svg";
+  function panel(kind){
+    const isCat=kind==="cat";
+    const title=isCat?"猫骨骼结构图":"犬的骨骼图";
+    const ox=isCat?12:12;
+    // 单面板 480x320
+    return `
+    <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" class="poster-panel">
+      <defs>
+        <pattern id="paper${kind}" width="4" height="4" patternUnits="userSpaceOnUse">
+          <rect width="4" height="4" fill="#F7F2E8"/>
+          <circle cx="1" cy="1" r="0.3" fill="#EDE4D4"/>
+        </pattern>
+      </defs>
+      <rect x="0" y="0" width="480" height="320" fill="url(#paper${kind})" stroke="#2B5F9E" stroke-width="3"/>
+      <!-- 蓝底标题条 -->
+      <rect x="0" y="0" width="480" height="36" fill="#2B5F9E"/>
+      <text x="240" y="24" text-anchor="middle" fill="#FFFFFF" font-size="18" font-weight="700"
+        font-family="PingFang SC,Microsoft YaHei,sans-serif">${title}</text>
 
-  function overlay(){
-    // 非关节系统用半透明色块叠在图上
-    const boxes=[];
-    if(isResp) boxes.push({x:42,y:28,w:22,h:22,c:"rgba(70,150,230,.38)",t:"肺/呼吸"});
-    if(isHeart) boxes.push({x:40,y:38,w:12,h:12,c:"rgba(230,80,80,.42)",t:"心脏"});
-    if(isGi) boxes.push({x:52,y:48,w:22,h:18,c:"rgba(70,190,120,.38)",t:"胃肠"});
-    if(isUro) boxes.push({x:58,y:42,w:12,h:12,c:"rgba(70,170,220,.40)",t:"肾/泌尿"});
-    if(isEye) boxes.push({x:12,y:22,w:10,h:10,c:"rgba(70,110,230,.40)",t:"眼部"});
-    if(isSkin) boxes.push({x:0,y:0,w:100,h:100,c:"rgba(220,110,150,.12)",t:""});
-    if(!boxes.length) return "";
-    return boxes.map(b=>`<div style="position:absolute;left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%;background:${b.c};border-radius:12px;pointer-events:none;box-shadow:0 0 0 1.5px rgba(255,255,255,.35) inset">${b.t?`<span style="position:absolute;left:4px;top:-18px;font-size:11px;font-weight:700;color:#333;background:rgba(255,255,255,.9);padding:2px 6px;border-radius:6px">${b.t}</span>`:""}</div>`).join("");
+      <g transform="translate(${ox},48)">
+        <!-- 体表轮廓 -->
+        <path d="M230,30 C290,32 340,55 348,95 C355,135 330,165 280,172 L120,172 C70,168 40,145 38,110 C36,72 80,32 130,30 Z"
+          fill="#E8DCC8" stroke="#B89B72" stroke-width="1.4" opacity="0.5"/>
+
+        <!-- 头骨 -->
+        <ellipse cx="85" cy="70" rx="38" ry="32" fill="${B}" stroke="${BS}" stroke-width="1.8"/>
+        <ellipse cx="85" cy="70" rx="24" ry="18" fill="none" stroke="${BS}" stroke-width="1" opacity=".45"/>
+        <ellipse cx="70" cy="66" rx="9" ry="7" fill="#F7F0E4" stroke="${BS}" stroke-width="1.2"/>
+        <path d="M55,88 C62,98 88,100 105,88" fill="none" stroke="${BS}" stroke-width="2.2"/>
+        ${isCat?`<path d="M58,48 L48,18 L78,42 Z" fill="${B}" stroke="${BS}" stroke-width="1.4"/>
+                 <path d="M102,44 L118,16 L128,44 Z" fill="${B}" stroke="${BS}" stroke-width="1.4"/>`
+               :`<path d="M62,46 L52,22 L88,40 Z" fill="${B}" stroke="${BS}" stroke-width="1.4"/>
+                 <path d="M55,78 L28,85 L48,95 Z" fill="${B}" stroke="${BS}" stroke-width="1.2"/>`}
+
+        <!-- 颈椎 -->
+        ${[0,1,2,3,4,5].map(i=>`<ellipse cx="${118+i*14}" cy="${62-i*0.8}" rx="7" ry="6.5" fill="${B}" stroke="${BS}" stroke-width="1"/>`).join("")}
+
+        <!-- 脊柱 -->
+        ${Array.from({length:14},(_,i)=>`<ellipse cx="${205+i*10}" cy="${64+Math.sin(i/2.5)*2.5}" rx="6.5" ry="7" fill="${B}" stroke="${BS}" stroke-width="1"/>`).join("")}
+
+        <!-- 肋骨 -->
+        ${[0,1,2,3,4,5,6,7].map(i=>{
+          const x=215+i*13;
+          return `<path d="M${x},72 C${x-10},100 ${x-8},128 ${x+6},145" fill="none" stroke="${BS}" stroke-width="1.8" opacity=".9"/>`;
+        }).join("")}
+        <line x1="215" y1="145" x2="295" y2="145" stroke="${BS}" stroke-width="2.2"/>
+
+        <!-- 肩胛 -->
+        <ellipse cx="145" cy="88" rx="15" ry="22" fill="${B}" stroke="${BS}" stroke-width="1.5" transform="rotate(-16 145 88)" opacity="${hot(J)}"/>
+        <!-- 骨盆 -->
+        <path d="M310,72 C335,68 352,88 345,112 C338,132 315,135 305,115 Z" fill="${B}" stroke="${BS}" stroke-width="1.5" opacity="${hot(J)}"/>
+
+        <!-- 前肢 -->
+        <line x1="145" y1="112" x2="135" y2="150" stroke="${B}" stroke-width="5.5" stroke-linecap="round"/>
+        <line x1="135" y1="150" x2="128" y2="185" stroke="${B}" stroke-width="4.5" stroke-linecap="round"/>
+        <line x1="128" y1="185" x2="122" y2="205" stroke="${B}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="145" cy="112" r="${J?9:7}" fill="${JF}" stroke="${JS}" stroke-width="${J?2:1.2}"/>
+        <circle cx="135" cy="150" r="${J?8:6}" fill="${JF}" stroke="${JS}" stroke-width="${J?2:1.2}"/>
+        <circle cx="128" cy="185" r="${J?7:5}" fill="${JF}" stroke="${JS}" stroke-width="${J?1.8:1}"/>
+
+        <!-- 后肢 -->
+        <line x1="330" y1="108" x2="315" y2="155" stroke="${B}" stroke-width="6" stroke-linecap="round"/>
+        <line x1="315" y1="155" x2="325" y2="195" stroke="${B}" stroke-width="5" stroke-linecap="round"/>
+        <line x1="325" y1="195" x2="335" y2="212" stroke="${B}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="330" cy="108" r="${J?10:7}" fill="${JF}" stroke="${JS}" stroke-width="${J?2.2:1.2}"/>
+        <circle cx="315" cy="155" r="${J?9:6}" fill="${JF}" stroke="${JS}" stroke-width="${J?2:1.2}"/>
+        <circle cx="325" cy="195" r="${J?7:5}" fill="${JF}" stroke="${JS}" stroke-width="${J?1.8:1}"/>
+
+        <!-- 尾 -->
+        ${isCat
+          ?`<path d="M348,85 C385,55 400,35 392,12" fill="none" stroke="${B}" stroke-width="5" stroke-linecap="round"/>`
+          :`<path d="M348,88 C375,85 395,75 402,62" fill="none" stroke="${B}" stroke-width="5" stroke-linecap="round"/>`}
+
+        <!-- 引线标注（教材风） -->
+        ${labelLayer(isCat)}
+      </g>
+    </svg>`;
   }
 
   const labelMap={nose:"鼻腔",trachea:"气管",lung:"肺叶",heart:"心脏",liver:"肝",stomach:"胃",intestine:"肠",kidney:"肾",bladder:"膀胱",joint:"关节",bone:"骨骼",skin:"皮肤",eye:"眼部",parasite:"寄生虫",immune:"免疫"};
   const parts=systems.map(k=>labelMap[k]||k);
 
-  return `<div class="sc-body-map" style="background:#FBF7EF">
+  return `<div class="sc-body-map" style="background:#EEF3F8;border-color:#2B5F9E44">
     <div class="hdr">
       <div>
-        <div class="title">🦴 ${esc(title)}</div>
-        <div class="sub">${esc(sub||"教材级犬猫解剖图 · 高亮为主要作用部位")}</div>
+        <div class="title" style="color:#2B5F9E">📘 ${esc(title)}</div>
+        <div class="sub">${esc(sub||"教材挂图风格 · 犬猫骨骼结构 · 引线标注作用部位")}</div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${showDog?`<div style="flex:1;min-width:280px;position:relative;border:1px solid #D4C8B4;border-radius:12px;overflow:hidden;background:#F7F1E6">
-        <img src="${dogSrc}" alt="犬解剖图" style="width:100%;height:auto;display:block" loading="lazy">
-        ${overlay()}
-        <div style="position:absolute;left:10px;top:10px;background:rgba(15,107,92,.88);color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:8px">犬 · ${isJoint?"关节骨骼":"解剖示意"}</div>
-      </div>`:""}
-      ${showCat?`<div style="flex:1;min-width:280px;position:relative;border:1px solid #D4C8B4;border-radius:12px;overflow:hidden;background:#F7F1E6">
-        <img src="${catSrc}" alt="猫骨骼解剖图" style="width:100%;height:auto;display:block;background:#FCF8F0" loading="lazy">
-        ${isJoint?`<div style="position:absolute;inset:0;background:radial-gradient(circle at 38% 42%,rgba(255,190,50,.22),transparent 22%),radial-gradient(circle at 62% 48%,rgba(255,190,50,.22),transparent 22%),radial-gradient(circle at 55% 68%,rgba(255,190,50,.18),transparent 18%);pointer-events:none"></div>`:""}
-        ${overlay()}
-        <div style="position:absolute;left:10px;top:10px;background:rgba(15,107,92,.88);color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:8px">猫 · ${isJoint?"关节骨骼":"解剖示意"}</div>
-      </div>`:""}
+    <div class="poster-grid">
+      ${showCat?panel("cat"):""}
+      ${showDog?panel("dog"):""}
     </div>
-    <div class="zone-legend" style="margin-top:10px">
+    <div class="zone-legend">
       ${parts.map(t=>`<span class="anno hot" style="font-size:12px;padding:5px 12px">${t}</span>`).join("")}
-      ${isJoint?`<span class="anno hot" style="background:#FFF3D6;color:#8A6010;border-color:#E0B040">肩/肘/腕 · 髋/膝/踝</span>`:""}
     </div>
     ${mech?`<div class="mech-box" style="margin-top:10px"><div class="t">⚙️ 作用机理</div><div class="b">${esc(mech)}</div></div>`:""}
-    <div class="cap">医学教材解剖图（公有领域/CC BY-SA）· 以说明书与执业兽医判断为准</div>
+    <div class="cap">犬猫骨骼结构挂图式解剖示意 · 以说明书与执业兽医判断为准</div>
   </div>`;
 }
 
