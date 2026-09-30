@@ -1,12 +1,15 @@
 ﻿/* 鐘尗涓村簥搴旂敤鍦烘櫙閫夊搧 路 Service Worker */
-const CACHE = 'hld-vet-app-v6';
+const CACHE = 'hld-vet-app-v7';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './icon-512-maskable.png'
+  './icon-512-maskable.png',
+  './img/dog-joints.png',
+  './img/dog-anatomy-clean.jpg',
+  './img/cat-skeleton.svg'
 ];
 
 self.addEventListener('install', (e) => {
