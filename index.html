@@ -130,6 +130,62 @@ input,textarea,select{font-family:inherit}
 .brief .lab{font-size:11px;font-weight:700;color:var(--ai);letter-spacing:.3px;margin:10px 0 4px}
 .brief .body{font-size:13px;line-height:1.7;white-space:pre-wrap;color:#2A342F}
 
+
+/* 左图右文 */
+.brief-split{
+  display:flex;gap:10px;align-items:flex-start;margin:10px 0;
+}
+.brief-split .left{
+  flex:1.15;min-width:0;
+}
+.brief-split .right{
+  flex:1;min-width:0;
+}
+.brief-split .left .sc-map{
+  margin:0;
+}
+.brief-split .right .brief{
+  margin:0;
+}
+@media (max-width:520px){
+  .brief-split{flex-direction:column}
+}
+
+/* 场景图示 */
+.sc-map{
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:12px;margin:10px 0;
+}
+.sc-map .cap{font-size:10.5px;color:var(--muted);text-align:center;margin-top:10px}
+.sc-flow{display:flex;flex-direction:column;gap:10px}
+.sc-row{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.sc-node{
+  flex:1;min-width:120px;border-radius:10px;padding:10px 11px;
+  border:1px solid var(--line);background:#FFFCF7;
+}
+.sc-node .t{font-size:11px;font-weight:800;letter-spacing:.2px;margin-bottom:6px}
+.sc-node .items{margin:0;padding-left:14px;border-left:2px solid #D9D2C5}
+.sc-node .items li{font-size:12px;line-height:1.6;margin:4px 0;word-break:break-word}
+.sc-node.ok{background:#E3F1ED;border-color:#0F6B5C55}
+.sc-node.ok .t{color:#0F6B5C}
+.sc-node.warn{background:#FFF3E0;border-color:#D9770655}
+.sc-node.warn .t{color:#D97706}
+.sc-node.danger{background:#FDECEC;border-color:#C0392B55}
+.sc-node.danger .t{color:#C0392B}
+.sc-node.dose{background:#E8F0FF;border-color:#2F6FED55}
+.sc-node.dose .t{color:#2F6FED}
+.sc-arrow{
+  text-align:center;font-size:16px;color:#A89B8C;line-height:1;
+}
+.sc-title-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:linear-gradient(135deg,#0F6B5C,#1A8A78);color:#fff;
+  border-radius:10px;padding:10px 12px;margin-bottom:10px;
+}
+.sc-title-bar .n{font-size:13.5px;font-weight:800}
+.sc-title-bar .b{font-size:11px;opacity:.9}
+.sc-tag{font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.18)}
+
 .mindmap{
   background:#fff;border:1px solid var(--line);border-radius:12px;
   padding:12px;margin:10px 0;
@@ -634,13 +690,14 @@ function wrapText(str,per=16){
   return lines.length?lines:[""];
 }
 function renderMindMapSvg(p){
-  // HTML 思维导图：全文换行显示，禁止截断
   const ai=p.ai||{};
   const groups=[
     {title:"主要成分",color:"#6C5CE7",bg:"#EDE9FF",items:splitPoints(ai.ingredients||p.ingredient,8)},
-    {title:"使用方法",color:"#0F6B5C",bg:"#E3F1ED",items:splitPoints(ai.usage||p.usage,8)},
-    {title:"适用症状 / 场景",color:"#2F6FED",bg:"#E8F0FF",items:splitPoints(ai.scenarios,8)},
-    {title:"注意事项",color:"#D97706",bg:"#FFF3E0",items:splitPoints(ai.cautions,6)},
+    {title:"用法用量",color:"#0F6B5C",bg:"#E3F1ED",items:splitPoints(ai.usage||p.usage,8)},
+    {title:"应用场景",color:"#2F6FED",bg:"#E8F0FF",items:splitPoints(ai.scenarios,8)},
+    {title:"推荐配伍",color:"#0F6B5C",bg:"#E3F1ED",items:splitPoints(ai.pairs,6)},
+    {title:"配伍禁忌",color:"#C0392B",bg:"#FDECEC",items:splitPoints(ai.pairBan,6)},
+    {title:"使用禁忌",color:"#D97706",bg:"#FFF3E0",items:splitPoints(ai.cautions,6)},
   ];
   let html=`<div class="mm-root">${esc(p.name||"产品")}</div>`;
   groups.forEach(g=>{
@@ -653,31 +710,125 @@ function renderMindMapSvg(p){
   return html;
 }
 
+function renderScenarioMap(p){
+  const ai=p.ai||{};
+  const scenes=splitPoints(ai.scenarios,5);
+  const pairs=splitPoints(ai.pairs,4);
+  const pairBan=splitPoints(ai.pairBan,4);
+  const contra=splitPoints(ai.cautions,4);
+  const dose=splitPoints(ai.usage||p.usage,4);
+  return `<div class="sc-map">
+    <div class="sc-title-bar">
+      <div>
+        <div class="n">${esc(p.name||"产品")}</div>
+        <div class="b">${esc(p.brand||"")}${p.spec?" · "+esc(p.spec):""}</div>
+      </div>
+      <div class="sc-tag">${{drug:"药品",nutri:"营养",diag:"检测",other:"其他"}[p.category]||"产品"} 图示</div>
+    </div>
+    <div class="sc-flow">
+      <div class="sc-row">
+        <div class="sc-node ok" style="flex:2">
+          <div class="t">🩺 临床使用场景</div>
+          <ul class="items">${(scenes.length?scenes:["（点「AI 生成」填写）"]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+        </div>
+      </div>
+      <div class="sc-arrow">▼</div>
+      <div class="sc-row">
+        <div class="sc-node dose">
+          <div class="t">💊 用法用量</div>
+          <ul class="items">${(dose.length?dose:["（待生成）"]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+        </div>
+      </div>
+      <div class="sc-arrow">▼</div>
+      <div class="sc-row">
+        <div class="sc-node ok">
+          <div class="t">✅ 推荐配伍</div>
+          <ul class="items">${(pairs.length?pairs:["（待生成）"]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+        </div>
+        <div class="sc-node danger">
+          <div class="t">⛔ 配伍禁忌</div>
+          <ul class="items">${(pairBan.length?pairBan:["（待生成）"]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+        </div>
+      </div>
+      <div class="sc-row">
+        <div class="sc-node warn" style="flex:1">
+          <div class="t">⚠️ 使用禁忌</div>
+          <ul class="items">${(contra.length?contra:["（待生成）"]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+        </div>
+      </div>
+    </div>
+    <div class="cap">用药场景图示 · 由 AI 生成，具体以说明书与执业兽医判断为准</div>
+  </div>`;
+}
 function renderBrief(p){
   if(!p) return "";
   const ai=p.ai||{};
   return `
-  <div class="brief">
-    <h4>产品详细介绍 · ${esc(p.name)}</h4>
-    <div class="lab">主要成分</div>
-    <div class="body">${esc(ai.ingredients||p.ingredient||"—")}</div>
-    <div class="lab">使用方法 / 用法用量</div>
-    <div class="body">${esc(ai.usage||p.usage||"—")}</div>
-    <div class="lab">临床上适用症状 / 场景</div>
-    <div class="body">${esc(ai.scenarios||"—")}</div>
-    ${ai.cautions?`<div class="lab">注意事项</div><div class="body">${esc(ai.cautions)}</div>`:""}
+  <div class="brief-split">
+    <div class="left">${renderScenarioMap(p)}</div>
+    <div class="right">
+      <div class="brief">
+        <h4>用法用量与配伍说明</h4>
+        <div class="lab">主要成分</div>
+        <div class="body">${esc(ai.ingredients||p.ingredient||"—")}</div>
+        <div class="lab">用法用量</div>
+        <div class="body">${esc(ai.usage||p.usage||"—")}</div>
+        <div class="lab">临床使用场景</div>
+        <div class="body">${esc(ai.scenarios||"—")}</div>
+        ${ai.pairs?`<div class="lab">推荐配伍</div><div class="body">${esc(ai.pairs)}</div>`:""}
+        ${ai.pairBan?`<div class="lab">配伍禁忌</div><div class="body">${esc(ai.pairBan)}</div>`:""}
+        ${ai.cautions?`<div class="lab">使用禁忌</div><div class="body">${esc(ai.cautions)}</div>`:""}
+      </div>
+    </div>
   </div>
   <div class="mindmap">${renderMindMapSvg(p)}<div class="cap">产品应用思维导图（自动根据 AI 介绍生成）</div></div>`;
 }
 
 /* ========== product helpers ========== */
+function normName(n){ return String(n||"").replace(/[（）()【】\s·•®™\-—–_]/g,"").toLowerCase(); }
 function findProductByName(name){
   if(!name) return null;
-  const q=String(name).replace(/[（）()【】\s]/g,"").toLowerCase();
-  return products.find(p=>{
-    const pn=(p.name||"").replace(/[（）()【】\s]/g,"").toLowerCase();
+  const q=normName(name);
+  if(!q) return null;
+  // 1) 精确/包含
+  let hit=products.find(p=>{
+    const pn=normName(p.name);
     return pn && (q.includes(pn)||pn.includes(q));
   });
+  if(hit) return hit;
+  // 2) 简称：查询词连续出现在产品名中（如「利节」→ 利节生）
+  if(q.length>=2){
+    hit=products.find(p=>{
+      const pn=normName(p.name);
+      return pn && pn.includes(q);
+    });
+    if(hit) return hit;
+  }
+  // 3) 品牌+简称
+  hit=products.find(p=>{
+    const pb=normName((p.brand||"")+" "+(p.name||""));
+    return pb && pb.includes(q);
+  });
+  return hit||null;
+}
+function findProductsByQuery(name,limit=8){
+  const q=normName(name);
+  if(!q) return [];
+  const scored=[];
+  products.forEach(p=>{
+    const pn=normName(p.name);
+    const pb=normName(p.brand||"");
+    if(!pn) return;
+    let s=0;
+    if(pn===q) s=100;
+    else if(pn.startsWith(q)||q.startsWith(pn)) s=80;
+    else if(pn.includes(q)) s=60;
+    else if(q.includes(pn)&&pn.length>=2) s=50;
+    else if(pb&&pb.includes(q)) s=30;
+    if(s>0) scored.push({s,p});
+  });
+  scored.sort((a,b)=>b.s-a.s);
+  return scored.slice(0,limit).map(x=>x.p);
 }
 function guessCat(name){
   const t=(name||"").toLowerCase();
@@ -706,15 +857,22 @@ function buildPrompt(p){
   const cfg=loadAi();
   const hints=SCENARIOS.filter(sc=>(sc.products||[]).some(x=>p.name&&(x.n.includes(p.name.slice(0,4))||p.name.includes(x.n.slice(0,4))))).slice(0,2)
     .map(s=>`${s.title}（${s.signs}）→ ${s.path}`).join("；");
-  return `你是资深宠物临床兽医与产品专员。禁止写「报价单未提供/未载明」「待核实」「详见说明书」。必须按产品名/品牌/品类给出具体成分与剂量数字。
+  return `你是资深宠物临床兽医与产品专员。禁止写「报价单未提供/未载明」「待核实」「详见说明书」。必须给出具体成分、剂量数字、配伍与禁忌。
 
-四节输出，标题严格如下：
+六节输出，标题严格如下：
 【主要成分】
-【使用方法】
+【用法用量】
 【应用场景】
-【注意事项】
+【推荐配伍】
+【配伍禁忌】
+【使用禁忌】
 
-【使用方法】必须写具体剂量参考（如犬 5–10 mg/kg 每日X次，或 10kg 犬每日1片，随餐），写清疗程。
+要求：
+- 【用法用量】必须分犬/猫写具体剂量（mg/kg 或 每日片数），给药途径、次数、疗程周数。
+- 【应用场景】用短句列出 3–5 个临床场景（疾病/症状 → 何时用）。
+- 【推荐配伍】写可联用的药物/营养品及联用目的（2–4 条）。
+- 【配伍禁忌】写禁止或需谨慎合用的药物及原因（2–4 条，无则写同类原则）。
+- 【使用禁忌】写禁用/慎用动物情况（肝肾不全、孕畜、幼龄、过敏等）。
 
 产品：${p.name||"未知"}｜品牌：${p.brand||"未知"}｜类别：${p.category||""}｜角色：${p.role||""}
 报价单成分：${p.ingredient||"（无，请推断）"}
@@ -722,7 +880,7 @@ function buildPrompt(p){
 ${hints?`相关场景：${hints}`:""}
 ${cfg.extra?`补充：${cfg.extra}`:""}
 
-每节 80–150 字，可用短句分号罗列。`;
+每节 60–140 字，用短句分号罗列。`;
 }
 
 async function callAi(prompt){
@@ -735,7 +893,7 @@ async function callAi(prompt){
     body:JSON.stringify({
       model:cfg.model,
       messages:[
-        {role:"system",content:"你是宠物临床兽医产品专家。必须写出具体成分与剂量数字（mg/kg、次数、疗程周数）。禁止「报价单未提供」「待核实」。"},
+        {role:"system",content:"你是宠物临床兽医产品专家。必须写出具体成分、剂量数字（mg/kg、次数、疗程周数）、推荐配伍、配伍禁忌、使用禁忌。禁止「报价单未提供」「待核实」。"},
         {role:"user",content:prompt}
       ],
       temperature:0.35,max_tokens:1600
@@ -751,19 +909,24 @@ async function callAi(prompt){
   return content;
 }
 function parseAi(text){
-  const pick=t=>{
-    const m=text.match(new RegExp(`【${t}】\\s*([\\s\\S]*?)(?=【|$)`));
-    return m?m[1].trim():"";
+  const pick=(...ts)=>{
+    for(const t of ts){
+      const m=text.match(new RegExp(`【${t}】\\s*([\\s\\S]*?)(?=【|$)`));
+      if(m&&m[1].trim()) return m[1].trim();
+    }
+    return "";
   };
   return {
-    ingredients:pick("主要成分")||pick("成分"),
-    usage:pick("使用方法")||pick("用法"),
-    scenarios:pick("应用场景")||pick("场景"),
-    cautions:pick("注意事项")||pick("注意")
+    ingredients:pick("主要成分","成分"),
+    usage:pick("用法用量","使用方法","用法"),
+    scenarios:pick("应用场景","适用症状","场景","适用场景"),
+    pairs:pick("推荐配伍","配伍推荐","联合用药","联用"),
+    pairBan:pick("配伍禁忌","药物相互作用","相互作用"),
+    contra:pick("使用禁忌","禁忌症","使用注意","注意事项","注意")
   };
 }
 
-async function generateForProduct(id){
+function generateForProduct(id){
   const p=products.find(x=>x.id===id);
   if(!p) return;
   const cfg=loadAi();
@@ -772,7 +935,8 @@ async function generateForProduct(id){
     toast("请先配置 AI");
     return;
   }
-  toast("AI 生成中…");
+  toast("AI 生成使用场景与配伍说明…");
+  return (async()=>{
   try{
     const raw=await callAi(buildPrompt(p));
     const parts=parseAi(raw);
@@ -780,7 +944,9 @@ async function generateForProduct(id){
       ingredients:parts.ingredients||raw,
       usage:parts.usage||"",
       scenarios:parts.scenarios||"",
-      cautions:parts.cautions||"",
+      pairs:parts.pairs||"",
+      pairBan:parts.pairBan||"",
+      cautions:parts.contra||parts.cautions||"",
       generatedAt:new Date().toLocaleString("zh-CN")
     };
     saveP();
@@ -795,6 +961,7 @@ async function generateForProduct(id){
   }catch(e){
     toast("失败："+e.message,4000);
   }
+  })();
 }
 
 async function quickGenerate(name,brand,role){
