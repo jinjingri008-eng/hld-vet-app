@@ -799,101 +799,160 @@ function renderDetailAnatomy(opts){
   const showDog=opts.dog!==false;
   const showCat=opts.cat!==false;
   const on=(k)=>systems.includes(k);
-  const fill=(ok,base)=> ok ? base : "#E8E2D6";
-  const stroke=(ok,base)=> ok ? base : "#C9C0B0";
-  const sw=(ok)=> ok ? 3.2 : 1.2;
+  const isJoint=on("joint")||on("bone");
+  const isResp=on("lung")||on("trachea")||on("nose");
+  const isGi=on("stomach")||on("intestine");
+  const isUro=on("kidney")||on("bladder");
+  const isHeart=on("heart");
+  const isSkin=on("skin");
+  const isEye=on("eye");
 
-  function animalSvg(kind){
-    const isCat=kind==="cat";
-    const ox=isCat?330:8;
+  function drawAnimal(isCat){
+    const ox=isCat?340:0;
+    // 高精细矢量：轮廓 + 骨骼 + 关节囊 + 肌群 + 器官
     return `
-  <g transform="translate(${ox},16)">
-    <text x="150" y="12" text-anchor="middle" font-size="15" font-weight="800" fill="#1C2420" font-family="PingFang SC,sans-serif">${isCat?"猫":"犬"} · ${esc(title)}</text>
-    <path d="M175,70 C240,70 275,95 275,135 C275,175 245,195 195,198 L95,198 C55,196 30,175 28,140 C26,105 55,72 95,70 Z"
-      fill="#F7F0E4" stroke="#C4B8A6" stroke-width="1.6"/>
-    <ellipse cx="70" cy="95" rx="42" ry="36" fill="#F7F0E4" stroke="#C4B8A6" stroke-width="1.6"/>
-    ${isCat?`<path d="M42,70 L32,38 L62,62 Z" fill="#E8DCC8" stroke="#C4B8A6"/><path d="M78,64 L92,34 L102,62 Z" fill="#E8DCC8" stroke="#C4B8A6"/>`
-            :`<path d="M48,72 L38,40 L70,64 Z" fill="#E8DCC8" stroke="#C4B8A6"/>`}
-    <ellipse cx="52" cy="90" rx="9" ry="6.5" fill="${fill(on("eye"),"#5B8DEF")}" stroke="${stroke(on("eye"),"#2F6FED")}" stroke-width="${sw(on("eye"))}"/>
-    <ellipse cx="32" cy="102" rx="10" ry="7" fill="${fill(on("nose"),"#A8D8FF")}" stroke="${stroke(on("nose"),"#2F6FED")}" stroke-width="${sw(on("nose"))}"/>
-    <path d="M72,112 C95,118 115,122 135,124" fill="none" stroke="${stroke(on("trachea"),"#2F6FED")}" stroke-width="${on("trachea")?5:2.5}" stroke-linecap="round"/>
-    <ellipse cx="145" cy="118" rx="22" ry="16" fill="${fill(on("lung"),"#7EC8FF")}" stroke="${stroke(on("lung"),"#2F6FED")}" stroke-width="${sw(on("lung"))}"/>
-    <ellipse cx="175" cy="125" rx="24" ry="18" fill="${fill(on("lung"),"#6BB8F5")}" stroke="${stroke(on("lung"),"#2F6FED")}" stroke-width="${sw(on("lung"))}"/>
-    <ellipse cx="155" cy="145" rx="28" ry="14" fill="${fill(on("lung"),"#5AA8E8")}" stroke="${stroke(on("lung"),"#2F6FED")}" stroke-width="${sw(on("lung"))}"/>
-    ${on("lung")?`<text x="142" y="112" font-size="11" fill="#1A5A8A" font-family="PingFang SC,sans-serif">肺前叶</text><text x="172" y="150" font-size="11" fill="#1A5A8A" font-family="PingFang SC,sans-serif">肺后叶</text>`:""}
-    <ellipse cx="138" cy="132" rx="15" ry="13" fill="${fill(on("heart"),"#FF8A8A")}" stroke="${stroke(on("heart"),"#C0392B")}" stroke-width="${sw(on("heart"))}"/>
-    ${on("heart")?`<text x="128" y="155" font-size="11" fill="#C0392B" font-family="PingFang SC,sans-serif">心脏</text>`:""}
-    <ellipse cx="195" cy="145" rx="20" ry="13" fill="${fill(on("liver"),"#E8B86D")}" stroke="${stroke(on("liver"),"#C48A3A")}" stroke-width="${sw(on("liver"))}"/>
-    <ellipse cx="212" cy="140" rx="8" ry="6" fill="${fill(on("gall"),"#D4A84B")}" stroke="${stroke(on("gall"),"#C48A3A")}" stroke-width="${sw(on("gall"))}"/>
-    ${on("liver")?`<text x="188" y="168" font-size="11" fill="#8A5A10" font-family="PingFang SC,sans-serif">肝${on("gall")?"/胆":""}</text>`:""}
-    <ellipse cx="215" cy="165" rx="22" ry="16" fill="${fill(on("stomach"),"#7DDBA0")}" stroke="${stroke(on("stomach"),"#2DBE7C")}" stroke-width="${sw(on("stomach"))}"/>
-    ${on("stomach")?`<text x="208" y="168" font-size="11" fill="#1B6B40" font-family="PingFang SC,sans-serif">胃</text>`:""}
-    <path d="M175,178 C195,172 215,185 235,178 C250,172 255,185 245,195" fill="none" stroke="${stroke(on("intestine"),"#2DBE7C")}" stroke-width="${on("intestine")?6:2.5}" stroke-linecap="round"/>
-    ${on("intestine")?`<text x="175" y="198" font-size="11" fill="#1B6B40" font-family="PingFang SC,sans-serif">肠管</text>`:""}
-    <ellipse cx="175" cy="155" rx="12" ry="9" fill="${fill(on("kidney"),"#7EC8E8")}" stroke="${stroke(on("kidney"),"#3BB4E8")}" stroke-width="${sw(on("kidney"))}"/>
-    <ellipse cx="198" cy="158" rx="11" ry="8" fill="${fill(on("kidney"),"#7EC8E8")}" stroke="${stroke(on("kidney"),"#3BB4E8")}" stroke-width="${sw(on("kidney"))}"/>
-    ${on("kidney")?`<text x="182" y="150" font-size="11" fill="#1A6A8A" font-family="PingFang SC,sans-serif">肾</text>`:""}
-    <ellipse cx="230" cy="188" rx="12" ry="9" fill="${fill(on("bladder"),"#A8E0F0")}" stroke="${stroke(on("bladder"),"#3BB4E8")}" stroke-width="${sw(on("bladder"))}"/>
-    ${on("bladder")?`<text x="222" y="208" font-size="11" fill="#1A6A8A" font-family="PingFang SC,sans-serif">膀胱</text>`:""}
-    <circle cx="115" cy="175" r="11" fill="${fill(on("joint"),"#A8D08D")}" stroke="${stroke(on("joint"),"#5F8F6A")}" stroke-width="${sw(on("joint"))}"/>
-    <circle cx="155" cy="185" r="11" fill="${fill(on("joint"),"#A8D08D")}" stroke="${stroke(on("joint"),"#5F8F6A")}" stroke-width="${sw(on("joint"))}"/>
-    <circle cx="220" cy="185" r="11" fill="${fill(on("joint"),"#A8D08D")}" stroke="${stroke(on("joint"),"#5F8F6A")}" stroke-width="${sw(on("joint"))}"/>
-    <line x1="115" y1="186" x2="105" y2="218" stroke="${stroke(on("bone"),"#8A8A7A")}" stroke-width="${on("bone")?4:2}"/>
-    <line x1="155" y1="196" x2="150" y2="222" stroke="${stroke(on("bone"),"#8A8A7A")}" stroke-width="${on("bone")?4:2}"/>
-    <line x1="220" y1="196" x2="230" y2="222" stroke="${stroke(on("bone"),"#8A8A7A")}" stroke-width="${on("bone")?4:2}"/>
-    ${on("joint")?`<text x="96" y="210" font-size="11" fill="#3D6B45" font-family="PingFang SC,sans-serif">关节</text><text x="145" y="215" font-size="11" fill="#3D6B45" font-family="PingFang SC,sans-serif">膝/髋</text>`:""}
-    <path d="M175,70 C240,70 275,95 275,135 C275,175 245,195 195,198 L95,198 C55,196 30,175 28,140 C26,105 55,72 95,70 Z"
-      fill="none" stroke="${on("skin")?"#D4789A":"#EDE7DA"}" stroke-width="${on("skin")?4:1}" opacity="0.95"/>
-    ${on("skin")?`<text x="248" y="95" font-size="11" fill="#A04A70" font-family="PingFang SC,sans-serif">皮肤</text>`:""}
-    ${on("parasite")?`<circle cx="255" cy="110" r="7" fill="#C9A227"/><circle cx="268" cy="135" r="6" fill="#C9A227"/>`:""}
-    ${on("immune")||on("lymph")?`<circle cx="125" cy="148" r="5" fill="#8B8BE8"/><circle cx="235" cy="160" r="5" fill="#8B8BE8"/><circle cx="165" cy="120" r="5" fill="#8B8BE8"/>`:""}
-    ${on("pancreas")?`<ellipse cx="198" cy="172" rx="12" ry="6" fill="#C9A0DC" stroke="#8B6CE8" stroke-width="2"/>`:""}
+  <g transform="translate(${ox},8)">
+    <text x="175" y="18" text-anchor="middle" font-size="16" font-weight="700" fill="#1C2420" font-family="PingFang SC,Microsoft YaHei,sans-serif">${isCat?"猫":"犬"} · 解剖作用示意</text>
+
+    <!-- 躯干肌肉底层 -->
+    <path d="M200,78 C265,82 295,115 295,155 C295,195 255,215 195,218 L105,218 C55,214 28,190 28,150 C28,110 60,78 105,78 Z"
+      fill="#E8D5C0" stroke="#B9A892" stroke-width="1.8"/>
+    <!-- 肌纤维纹理 -->
+    <path d="M80,100 Q140,95 200,110" fill="none" stroke="#D4B89A" stroke-width="1" opacity=".7"/>
+    <path d="M75,130 Q150,125 220,140" fill="none" stroke="#D4B89A" stroke-width="1" opacity=".7"/>
+    <path d="M80,165 Q155,160 230,175" fill="none" stroke="#D4B89A" stroke-width="1" opacity=".7"/>
+
+    <!-- 头 -->
+    <ellipse cx="78" cy="105" rx="48" ry="42" fill="#E8D5C0" stroke="#B9A892" stroke-width="1.8"/>
+    ${isCat?`<path d="M48,75 L35,35 L72,68 Z" fill="#DCC4A8" stroke="#B9A892" stroke-width="1.5"/>
+             <path d="M95,70 L112,32 L122,68 Z" fill="#DCC4A8" stroke="#B9A892" stroke-width="1.5"/>`
+           :`<path d="M55,72 L40,38 L80,65 Z" fill="#DCC4A8" stroke="#B9A892" stroke-width="1.5"/>
+             <path d="M48,88 L20,95 L42,108 Z" fill="#DCC4A8" stroke="#B9A892" stroke-width="1.2"/>`}
+
+    <!-- 颅骨/下颌 -->
+    <ellipse cx="62" cy="100" rx="18" ry="14" fill="none" stroke="#C9B8A0" stroke-width="1" stroke-dasharray="2 2"/>
+
+    <!-- 眼球 -->
+    <ellipse cx="55" cy="98" rx="11" ry="8" fill="${isEye?"#3D7ED8":"#8A7A68"}" stroke="#2F6FED" stroke-width="${isEye?2.5:1}"/>
+    <circle cx="55" cy="98" r="3.5" fill="#1A1A1A"/>
+    ${isEye?`<text x="30" y="88" font-size="11" fill="#1A4A8A" font-family="PingFang SC,sans-serif" font-weight="700">眼</text>`:""}
+
+    <!-- 鼻腔 -->
+    <ellipse cx="32" cy="112" rx="12" ry="8" fill="${on("nose")?"#6BA8E8":"#C4B4A0"}" stroke="#2F6FED" stroke-width="${on("nose")?2.2:1}"/>
+
+    <!-- 脊柱 -->
+    <path d="M115,95 C155,88 210,92 255,105" fill="none" stroke="${isJoint?"#F0C14A":"#A09080"}" stroke-width="${isJoint?5:3}" stroke-linecap="round"/>
+    <!-- 椎体刻度 -->
+    ${[130,155,180,205,230].map(x=>`<line x1="${x}" y1="88" x2="${x}" y2="102" stroke="${isJoint?"#D4A017":"#B0A090"}" stroke-width="2"/>`).join("")}
+    ${isJoint?`<text x="175" y="78" font-size="11" fill="#8A6A10" font-family="PingFang SC,sans-serif" font-weight="700">脊柱</text>`:""}
+
+    <!-- 肩胛骨 -->
+    <ellipse cx="118" cy="125" rx="18" ry="22" fill="none" stroke="${isJoint?"#F0C14A":"#C0B0A0"}" stroke-width="${isJoint?3:1.5}" transform="rotate(-20 118 125)"/>
+
+    <!-- 髋骨 -->
+    <ellipse cx="235" cy="130" rx="22" ry="18" fill="none" stroke="${isJoint?"#F0C14A":"#C0B0A0"}" stroke-width="${isJoint?3:1.5}" transform="rotate(15 235 130)"/>
+
+    <!-- 前肢骨骼 -->
+    <line x1="118" y1="145" x2="108" y2="185" stroke="${isJoint?"#E8B84A":"#A09080"}" stroke-width="${isJoint?4.5:2.5}" stroke-linecap="round"/>
+    <line x1="108" y1="185" x2="100" y2="215" stroke="${isJoint?"#E8B84A":"#A09080"}" stroke-width="${isJoint?4:2.2}" stroke-linecap="round"/>
+    <!-- 肘/腕关节 -->
+    <circle cx="108" cy="185" r="${isJoint?11:7}" fill="${isJoint?"#FFD666":"#D0C0B0"}" stroke="${isJoint?"#C48A00":"#A09080"}" stroke-width="${isJoint?2.5:1}"/>
+    <circle cx="100" cy="215" r="${isJoint?9:6}" fill="${isJoint?"#FFD666":"#D0C0B0"}" stroke="${isJoint?"#C48A00":"#A09080"}" stroke-width="${isJoint?2.2:1}"/>
+    <!-- 肩关节 -->
+    <circle cx="118" cy="145" r="${isJoint?12:8}" fill="${isJoint?"#FFD666":"#D0C0B0"}" stroke="${isJoint?"#C48A00":"#A09080"}" stroke-width="${isJoint?2.5:1}"/>
+
+    <!-- 后肢骨骼 -->
+    <line x1="235" y1="148" x2="228" y2="188" stroke="${isJoint?"#E8B84A":"#A09080"}" stroke-width="${isJoint?4.5:2.5}" stroke-linecap="round"/>
+    <line x1="228" y1="188" x2="238" y2="218" stroke="${isJoint?"#E8B84A":"#A09080"}" stroke-width="${isJoint?4:2.2}" stroke-linecap="round"/>
+    <!-- 髋/膝/踝关节 -->
+    <circle cx="235" cy="148" r="${isJoint?13:8}" fill="${isJoint?"#FFD666":"#D0C0B0"}" stroke="${isJoint?"#C48A00":"#A09080"}" stroke-width="${isJoint?2.8:1}"/>
+    <circle cx="228" cy="188" r="${isJoint?12:7}" fill="${isJoint?"#FFD666":"#D0C0B0"}" stroke="${isJoint?"#C48A00":"#A09080"}" stroke-width="${isJoint?2.5:1}"/>
+    <circle cx="238" cy="218" r="${isJoint?9:6}" fill="${isJoint?"#FFD666":"#D0C0B0"}" stroke="${isJoint?"#C48A00":"#A09080"}" stroke-width="${isJoint?2.2:1}"/>
+
+    <!-- 软骨层（关节面） -->
+    ${isJoint?`
+      <ellipse cx="118" cy="145" rx="8" ry="4" fill="#FFF0B0" opacity=".85"/>
+      <ellipse cx="235" cy="148" rx="9" ry="4" fill="#FFF0B0" opacity=".85"/>
+      <ellipse cx="228" cy="188" rx="8" ry="3.5" fill="#FFF0B0" opacity=".85"/>
+      <text x="118" y="168" font-size="11" fill="#8A6A10" font-family="PingFang SC,sans-serif" font-weight="700">肩关节</text>
+      <text x="242" y="175" font-size="11" fill="#8A6A10" font-family="PingFang SC,sans-serif" font-weight="700">髋关节</text>
+      <text x="200" y="205" font-size="11" fill="#8A6A10" font-family="PingFang SC,sans-serif" font-weight="700">膝关节</text>
+    `:""}
+
+    <!-- 肺叶 -->
+    <ellipse cx="155" cy="130" rx="28" ry="22" fill="${isResp?"#5BB0F0":"#C8B8A8"}" opacity="${isResp?0.92:0.45}" stroke="${isResp?"#1A6AAA":"#A09080"}" stroke-width="${isResp?2.2:1}"/>
+    <ellipse cx="195" cy="138" rx="32" ry="24" fill="${isResp?"#4A98E0":"#C0B0A0"}" opacity="${isResp?0.92:0.4}" stroke="${isResp?"#1A6AAA":"#A09080"}" stroke-width="${isResp?2.2:1}"/>
+    <ellipse cx="170" cy="160" rx="38" ry="18" fill="${isResp?"#3A88D0":"#B8A898"}" opacity="${isResp?0.9:0.35}" stroke="${isResp?"#1A6AAA":"#A09080"}" stroke-width="${isResp?2.2:1}"/>
+    ${isResp?`<text x="155" y="125" font-size="11" fill="#0A4A8A" font-family="PingFang SC,sans-serif" font-weight="700">肺前叶</text>
+      <text x="188" y="175" font-size="11" fill="#0A4A8A" font-family="PingFang SC,sans-serif" font-weight="700">肺后叶</text>
+      <path d="M100,120 L135,128" stroke="#1A6AAA" stroke-width="2"/><text x="78" y="118" font-size="10" fill="#1A6AAA">气管</text>`:""}
+
+    <!-- 心脏 -->
+    <path d="M160,145 C155,138 165,132 172,138 C179,132 189,138 184,148 C180,158 168,162 160,145 Z"
+      fill="${isHeart?"#E85A5A":"#C8A0A0"}" stroke="${isHeart?"#B02020":"#A08080"}" stroke-width="${isHeart?2:1}"/>
+    ${isHeart?`<text x="162" y="175" font-size="11" fill="#A02020" font-family="PingFang SC,sans-serif" font-weight="700">心脏</text>`:""}
+
+    <!-- 肝胃肠 -->
+    <ellipse cx="220" cy="155" rx="22" ry="15" fill="${on("liver")?"#D4A050":"#C0B0A0"}" stroke="#A08040" stroke-width="1.2"/>
+    <ellipse cx="230" cy="175" rx="20" ry="14" fill="${on("stomach")?"#6BC888":"#B8A898"}" stroke="${on("stomach")?"#2A8A50":"#A09080"}" stroke-width="${on("stomach")?2:1}"/>
+    <path d="M195,190 C215,182 245,195 255,185" fill="none" stroke="${on("intestine")?"#3AAA6A":"#A09080"}" stroke-width="${on("intestine")?6:2}" stroke-linecap="round"/>
+    ${on("stomach")?`<text x="218" y="178" font-size="11" fill="#1A6A40" font-family="PingFang SC,sans-serif" font-weight="700">胃</text>`:""}
+    ${on("intestine")?`<text x="200" y="205" font-size="11" fill="#1A6A40" font-family="PingFang SC,sans-serif" font-weight="700">肠</text>`:""}
+
+    <!-- 肾 -->
+    <ellipse cx="205" cy="155" rx="12" ry="9" fill="${on("kidney")?"#5AB0D8":"#B8A898"}" stroke="${on("kidney")?"#2A78A0":"#A09080"}" stroke-width="${on("kidney")?2:1}"/>
+    ${on("kidney")?`<text x="198" y="148" font-size="11" fill="#1A5A80" font-family="PingFang SC,sans-serif" font-weight="700">肾</text>`:""}
+
+    <!-- 皮肤外轮廓加粗 -->
+    <path d="M200,78 C265,82 295,115 295,155 C295,195 255,215 195,218 L105,218 C55,214 28,190 28,150 C28,110 60,78 105,78 Z"
+      fill="none" stroke="${isSkin?"#E06090":"#C0B0A0"}" stroke-width="${isSkin?5:1.5}" opacity=".95"/>
+    ${isSkin?`<text x="265" y="100" font-size="11" fill="#A04060" font-family="PingFang SC,sans-serif" font-weight="700">皮肤</text>`:""}
+
+    <!-- 尾 -->
+    <path d="M292,150 Q325,115 318,175" fill="none" stroke="#C0B0A0" stroke-width="8" stroke-linecap="round"/>
   </g>`;
   }
-  const labelMap={nose:"鼻腔",trachea:"气管",lung:"肺叶",heart:"心脏",liver:"肝",gall:"胆",stomach:"胃",intestine:"肠管",kidney:"肾",bladder:"膀胱",joint:"关节",bone:"骨骼",skin:"皮肤",eye:"眼部",parasite:"寄生虫",immune:"免疫",pancreas:"胰腺",lymph:"淋巴"};
+
+  const labelMap={nose:"鼻腔",trachea:"气管",lung:"肺叶",heart:"心脏",liver:"肝",gall:"胆",stomach:"胃",intestine:"肠管",kidney:"肾",bladder:"膀胱",joint:"关节",bone:"骨骼/脊柱",skin:"皮肤",eye:"眼部",parasite:"寄生虫",immune:"免疫",pancreas:"胰腺",lymph:"淋巴"};
   const parts=systems.map(k=>labelMap[k]||k);
+
   return `<div class="sc-body-map">
     <div class="hdr">
       <div>
         <div class="title">🔬 ${esc(title)}</div>
-        <div class="sub">${esc(sub||"高亮区域 = 主要作用部位")}</div>
+        <div class="sub">${esc(sub||"高亮 = 主要作用部位")}</div>
       </div>
     </div>
-    <svg viewBox="0 0 660 250" xmlns="http://www.w3.org/2000/svg">
-      ${showDog?animalSvg("dog"):""}
-      ${showCat?animalSvg("cat"):""}
+    <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;min-height:260px;background:linear-gradient(180deg,#FDFAF4,#F0EBE0);border-radius:12px;border:1px solid #D9D2C5">
+      ${showDog?drawAnimal(false):""}
+      ${showCat?drawAnimal(true):""}
     </svg>
-    <div class="zone-legend">${parts.map(t=>`<span class="anno hot">${t}</span>`).join("")}</div>
+    <div class="zone-legend">
+      ${parts.map(t=>`<span class="anno hot" style="font-size:12px;padding:5px 12px">${t}</span>`).join("")}
+    </div>
     ${mech?`<div class="mech-box" style="margin-top:10px"><div class="t">⚙️ 作用机理</div><div class="b">${esc(mech)}</div></div>`:""}
-    <div class="cap">解剖示意图 · 以说明书与执业兽医判断为准</div>
+    <div class="cap">医学解剖示意图 · 关节/骨骼/器官分区标注 · 以说明书与执业兽医判断为准</div>
   </div>`;
 }
 
 function productOrgans(p){
-  const ai=p.ai||{};
-  const text=[p.name,p.brand,p.role,p.ingredient,p.usage,ai.scenarios,ai.usage,ai.mechanism,p.notes].join(" ");
-  const t=text.toLowerCase();
-  const hit={};
-  const add=(k,w)=>{ hit[k]=(hit[k]||0)+w; };
-  if(/关节|软骨|骨关节|跛行|利节|氨糖|uc-?ii|绿唇贻贝|髌|髋|椎/.test(t)){ add("joint",5); add("bone",3); }
-  if(/呼吸|咳喘|鼻|肺|支气管|雾化/.test(t)){ add("lung",4); add("trachea",3); add("nose",2); }
-  if(/眼|结膜|角膜|滴眼/.test(t)) add("eye",5);
-  if(/皮肤|真菌|猫癣|皮炎|药浴|美毛|脱毛|瘙痒|耳/.test(t)){ add("skin",5); add("ear",2); }
-  if(/胃|吐|呕|溃疡|食欲/.test(t)) add("stomach",4);
-  if(/肠|腹泻|止泻|益生|消化|便|菌群/.test(t)) add("intestine",4);
-  if(/肾|泌尿|尿|结石|膀胱|降磷/.test(t)){ add("kidney",4); add("bladder",3); }
-  if(/肝|保肝|胆汁|退黄|脂肪肝/.test(t)){ add("liver",4); add("gall",2); }
-  if(/心|强心|匹莫|贝那普利|心肌|血压/.test(t)) add("heart",5);
-  if(/驱虫|寄生|吡虫啉|莫昔克丁|跳蚤|蜱/.test(t)) add("parasite",5);
-  if(/免疫|干扰素|抗体|单抗|球蛋白|升白|淋巴/.test(t)){ add("immune",3); add("lymph",2); }
-  if(/胰|血糖|糖尿/.test(t)) add("pancreas",4);
-  if(/补血|贫血|铁/.test(t)) add("immune",2);
-  // 默认：按类别
-  if(!Object.keys(hit).length){
-    if(p.category==="nutri"){ add("stomach",2); add("immune",2); }
-    else add("stomach",1);
+  const name=((p&&p.name)||"")+" "+((p&&p.role)||"");
+  // 利节生等关节产品：只标关节/骨骼
+  if(/利节|关节|软骨|骨关节|氨糖|uc-?ii|绿唇贻贝|髌|髋|椎/i.test(name)){
+    return ["joint","bone"];
   }
-  return Object.entries(hit).sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,6);
+  if(/咳|鼻|呼吸|肺|支气管/.test(name)) return ["nose","trachea","lung"];
+  if(/眼|角膜|结膜/.test(name)) return ["eye"];
+  if(/皮肤|癣|皮炎|耳|药浴|美毛/.test(name)) return ["skin","ear"];
+  if(/胃|吐|溃疡/.test(name)) return ["stomach"];
+  if(/肠|腹泻|益生|消化|便/.test(name)) return ["intestine"];
+  if(/肾|泌尿|尿|结石|膀胱/.test(name)) return ["kidney","bladder"];
+  if(/肝|胆|保肝/.test(name)) return ["liver","gall"];
+  if(/心|血压|强心/.test(name)) return ["heart"];
+  if(/虫|寄生|驱/.test(name)) return ["parasite"];
+  if(/免疫|抗体|干扰素|升白/.test(name)) return ["immune","lymph"];
+  if(/胰|血糖/.test(name)) return ["pancreas"];
+  return ["joint"]; // 默认不乱标
 }
 
 function productMechText(p){
@@ -907,22 +966,35 @@ function productMechText(p){
 }
 
 function productActionSystems(p){
-  // 场景筛选用：产品 → 场景 sys 键
-  const organs=productOrgans(p);
+  // 以产品名/角色为主，避免 AI 长文误判出消化/皮肤
+  const name=(p&&p.name)||"";
+  const role=(p&&p.role)||"";
+  const brand=(p&&p.brand)||"";
+  const core=(name+" "+role+" "+brand);
   const set=new Set();
-  if(organs.includes("joint")||organs.includes("bone")) set.add("msk");
-  if(organs.includes("lung")||organs.includes("trachea")||organs.includes("nose")) set.add("resp");
-  if(organs.includes("eye")) set.add("eye");
-  if(organs.includes("skin")||organs.includes("ear")) set.add("derm");
-  if(organs.includes("stomach")||organs.includes("intestine")||organs.includes("pancreas")) set.add("gi");
-  if(organs.includes("kidney")||organs.includes("bladder")) set.add("urinary");
-  if(organs.includes("liver")||organs.includes("gall")) set.add("liver");
-  if(organs.includes("heart")) set.add("cardio");
-  if(organs.includes("parasite")||organs.includes("immune")||organs.includes("lymph")) set.add("infect");
-  // 老年/营养相关
-  const text=[p.name,p.role,p.usage,(p.ai&&p.ai.scenarios)||""].join(" ");
-  if(/老年|慢病|营养|康复|免疫|保健|日常/.test(text)) set.add("nutrition");
-  if(!set.size) set.add("nutrition");
+  if(/利节|关节|软骨|骨关节|氨糖|uc-?ii|绿唇贻贝|髌|髋|椎间盘|助节|倍节|关杰宝|关节康/i.test(core)){
+    set.add("msk");
+    if(/老年|慢病|S6|支持片|养护|营养|保健/.test(core)) set.add("nutrition");
+  }
+  else if(/咳喘|鼻|呼吸|肺|支气管|雾化|干扰素|窝咳|麻杏|止咳/i.test(core)) set.add("resp");
+  else if(/眼|角膜|结膜|滴眼|目/i.test(core)) set.add("eye");
+  else if(/皮肤|癣|皮炎|药浴|美毛|脱毛|瘙痒|耳螨|耳炎|香波/i.test(core)) set.add("derm");
+  else if(/胃|吐|止吐|溃疡|食欲|马罗匹坦|硫糖铝/i.test(core)) set.add("gi");
+  else if(/肠|腹泻|止泻|益生|消化|便血|细小|猫瘟|胃肠/i.test(core)) set.add("gi");
+  else if(/肾|泌尿|尿|结石|膀胱|降磷|消石/i.test(core)) set.add("urinary");
+  else if(/肝|保肝|胆汁|退黄|脂肪肝/i.test(core)) set.add("liver");
+  else if(/心|强心|匹莫|贝那普利|心肌|血压|氨氯地平/i.test(core)) set.add("cardio");
+  else if(/驱虫|寄生|吡虫啉|莫昔克丁|跳蚤|蜱|氟雷拉钠/i.test(core)) set.add("infect");
+  else if(/免疫|干扰素|抗体|单抗|球蛋白|升白|干扰|脾氨肽/i.test(core)) set.add("immune");
+  else if(/胰|血糖|糖尿/i.test(core)) set.add("gi");
+  else if(/补血|贫血/i.test(core)) set.add("immune");
+  else {
+    // 兜底：营养品偏营养，药品按名字再猜
+    if((p&&p.category)==="nutri") set.add("nutrition");
+    else set.add("nutrition");
+  }
+  // 老年慢病/营养支持场景
+  if(set.has("msk")||/老年|慢病|营养|康复|保健|日常/.test(core)) set.add("nutrition");
   return Array.from(set);
 }
 
@@ -1347,15 +1419,17 @@ function renderHome(){
   SCENARIOS.forEach(sc=>{ if(state.sp==="all"||sc.sp===state.sp||sc.sp==="both") counts[sc.sys]=(counts[sc.sys]||0)+1; });
   const qProd=(state.q||"").trim()?findProductByName(state.q):null;
   const actionSys=qProd?new Set(productActionSystems(qProd)):null;
-  document.getElementById("sysGrid").innerHTML=Object.entries(SYSTEMS).slice(0,8).map(([k,s])=>{
-    const dim=actionSys&&!actionSys.has(k)&&k!=="all";
-    return `
-    <div class="sys-item" data-sys="${k}" style="${state.sys===k?"border-color:"+s.color+";background:"+s.color+"18":""};${dim?"opacity:.38":""}">
+  // 产品搜索时：只显示相关科室（如利节生→骨科、营养）
+  const sysEntries=Object.entries(SYSTEMS).filter(([k])=>{
+    if(!actionSys) return true;
+    return actionSys.has(k);
+  });
+  document.getElementById("sysGrid").innerHTML=(sysEntries.length?sysEntries:Object.entries(SYSTEMS).slice(0,8)).map(([k,s])=>`
+    <div class="sys-item" data-sys="${k}" style="${state.sys===k?"border-color:"+s.color+";background:"+s.color+"18":""}">
       <span class="dot" style="background:${s.color}"></span>
-      <span>${s.icon} ${s.name}${actionSys&&actionSys.has(k)?" ★":""}</span>
+      <span>${s.icon} ${s.name}</span>
       <span class="ct">${counts[k]||0}</span>
-    </div>`;
-  }).join("");
+    </div>`).join("");
   document.getElementById("sysGrid").querySelectorAll("[data-sys]").forEach(el=>{
     el.onclick=()=>{
       state.sys=state.sys===el.dataset.sys?null:el.dataset.sys;
@@ -1407,8 +1481,11 @@ function renderHome(){
 
 function renderScenarios(){
   const chips=document.getElementById("sysChips");
+  const qP=(state.q||"").trim()?findProductByName(state.q):null;
+  const aSys=qP?new Set(productActionSystems(qP)):null;
+  const ent=Object.entries(SYSTEMS).filter(([k])=>!aSys||aSys.has(k));
   chips.innerHTML=`<button class="chip ${!state.sys?"on":""}" data-sys="">全部</button>`+
-    Object.entries(SYSTEMS).map(([k,s])=>`<button class="chip ${state.sys===k?"on":""}" data-sys="${k}">${s.icon} ${s.name}</button>`).join("");
+    (ent.length?ent:Object.entries(SYSTEMS)).map(([k,s])=>`<button class="chip ${state.sys===k?"on":""}" data-sys="${k}">${s.icon} ${s.name}</button>`).join("");
   chips.querySelectorAll("[data-sys]").forEach(el=>{
     el.onclick=()=>{ state.sys=el.dataset.sys||null; renderScenarios(); };
   });

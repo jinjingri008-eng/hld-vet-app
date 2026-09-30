@@ -1,5 +1,5 @@
 ﻿/* 鐘尗涓村簥搴旂敤鍦烘櫙閫夊搧 路 Service Worker */
-const CACHE = 'hld-vet-app-v4';
+const CACHE = 'hld-vet-app-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -59,4 +59,5 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+
 
