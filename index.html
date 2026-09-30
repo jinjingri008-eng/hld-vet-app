@@ -131,6 +131,50 @@ input,textarea,select{font-family:inherit}
 .brief .body{font-size:13px;line-height:1.7;white-space:pre-wrap;color:#2A342F}
 
 
+
+/* 临床场景作用图 */
+.sc-body-map{
+  background:linear-gradient(180deg,#FFFCF7,#F4F8F6);
+  border:1px solid var(--line);border-radius:14px;
+  padding:12px;margin:0 0 12px;
+}
+.sc-body-map .hdr{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;
+}
+.sc-body-map .title{font-size:13.5px;font-weight:800;color:#0F6B5C}
+.sc-body-map .sub{font-size:11px;color:var(--muted)}
+.sc-body-map .zone-legend{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;
+}
+.sc-body-map svg{width:100%;height:auto;display:block}
+
+/* 犬猫解剖示意图 */
+.body-map{
+  background:#FFFCF7;border:1px solid var(--line);border-radius:12px;
+  padding:12px 10px 8px;margin:0 0 10px;
+}
+.body-map .cap{font-size:10.5px;color:var(--muted);text-align:center;margin-top:6px}
+.body-map .mm-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;
+}
+.body-map .mm-title{font-size:12.5px;font-weight:800;color:#0F6B5C}
+.body-map .mm-sub{font-size:10.5px;color:var(--muted)}
+.body-map svg{width:100%;height:auto;display:block}
+.mech-box{
+  margin-top:8px;background:#E3F1ED;border:1px solid #0F6B5C33;
+  border-radius:10px;padding:10px 11px;
+}
+.mech-box .t{font-size:11px;font-weight:800;color:#0F6B5C;margin-bottom:5px}
+.mech-box .b{font-size:12px;line-height:1.65;color:#2A342F;white-space:pre-wrap}
+.anno-list{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;
+}
+.anno{
+  font-size:10.5px;padding:3px 8px;border-radius:999px;
+  background:#E8F0FF;color:#2F6FED;font-weight:700;border:1px solid #2F6FED33;
+}
+.anno.hot{background:#FDECEC;color:#C0392B;border-color:#C0392B33}
+
 /* 左图右文 */
 .brief-split{
   display:flex;gap:10px;align-items:flex-start;margin:10px 0;
@@ -710,6 +754,254 @@ function renderMindMapSvg(p){
   return html;
 }
 
+
+/* ===== 犬猫作用部位识别 ===== */
+function detectSystems(p){
+  const ai=p.ai||{};
+  const text=[p.name,p.brand,p.role,p.ingredient,p.usage,ai.scenarios,ai.usage,ai.ingredients,p.notes].join(" ");
+  const t=text.toLowerCase();
+  const hit={};
+  const add=(k,w)=>{ hit[k]=(hit[k]||0)+w; };
+  const rules=[
+    [/呼吸|咳喘|鼻支|肺炎|支气管|雾化|氨溴索|麻杏/, "resp", 3],
+    [/眼|结膜|角膜|滴眼|目/, "eye", 3],
+    [/皮肤|真菌|猫癣|皮炎|药浴|美毛|脱毛|瘙痒|耳螨|耳炎/, "skin", 3],
+    [/关节|软骨|骨关节|跛行|利节|氨糖|uc-?ii|绿唇贻贝/, "msk", 3],
+    [/胃肠|呕吐|腹泻|止泻|益生|胰腺|消化|食欲|便/, "gi", 3],
+    [/肾|泌尿|尿|结石|膀胱|降磷/, "kidney", 3],
+    [/肝|保肝|胆汁|退黄|脂肪肝/, "liver", 3],
+    [/心|强心|匹莫|贝那普利|心肌|血压/, "heart", 3],
+    [/驱虫|寄生|吡虫啉|莫昔克丁|跳蚤|蜱/, "parasite", 3],
+    [/免疫|干扰素|抗体|单抗|球蛋白|疫苗|升白/, "immune", 2],
+    [/肿瘤|肿块|癌/, "tumor", 3],
+    [/补血|贫血|铁/, "blood", 2],
+    [/镇静|镇痛|麻醉|止痛|美洛昔康/, "pain", 2],
+  ];
+  rules.forEach(([re_,k,w])=>{ if(re_.test(t)) add(k,w); });
+  if(p.category==="nutri") add("immune",1);
+  // top systems
+  return Object.entries(hit).sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,5);
+}
+
+
+function renderScenarioBodyMap(sc){
+  // 临床场景 → 作用部位高亮
+  const sysMap={
+    resp:["resp"], gi:["gi"], urinary:["kidney"], cardio:["heart"],
+    liver:["liver"], derm:["skin"], eye:["eye"], msk:["msk"],
+    endo:["kidney","immune"], immune:["immune"], infect:["immune","resp","gi"],
+    er:["heart","gi"], nutrition:["gi","immune"]
+  };
+  const systems=sysMap[sc.sys]||["gi"];
+  // 症状关键词再补强
+  const text=(sc.title+" "+sc.signs+" "+sc.path+" "+(sc.products||[]).map(p=>p.n+" "+p.r).join(" "));
+  const extra=[];
+  if(/咳|鼻|呼吸|肺/.test(text)) extra.push("resp");
+  if(/吐|泻|胃肠|食欲|胰腺/.test(text)) extra.push("gi");
+  if(/尿|肾|结石|膀胱/.test(text)) extra.push("kidney");
+  if(/心|血压|循环/.test(text)) extra.push("heart");
+  if(/皮肤|癣|瘙痒|耳/.test(text)) extra.push("skin");
+  if(/眼|角膜|结膜/.test(text)) extra.push("eye");
+  if(/关节|跛|骨|椎/.test(text)) extra.push("msk");
+  if(/肝|黄疸/.test(text)) extra.push("liver");
+  if(/虫|寄生|驱/.test(text)) extra.push("parasite");
+  if(/免疫|抗体|干扰素|升白|感染|病毒|瘟|细小|猫瘟/.test(text)) extra.push("immune");
+  extra.forEach(k=>{ if(!systems.includes(k)) systems.push(k); });
+  const on=(k)=>systems.includes(k);
+  const showDog=sc.sp!=="cat";
+  const showCat=sc.sp!=="dog";
+
+  const glow=(ok,base)=> ok ? base : "#EDE7DA";
+  const dogSvg=`
+  <g transform="translate(8,22)">
+    <text x="100" y="8" text-anchor="middle" font-size="12" font-weight="700" fill="#1C2420" font-family="sans-serif">犬</text>
+    <ellipse cx="140" cy="120" rx="95" ry="55" fill="#F0E6D6" stroke="#C4B8A6" stroke-width="1.5"/>
+    <ellipse cx="55" cy="88" rx="40" ry="34" fill="#F0E6D6" stroke="#C4B8A6" stroke-width="1.5"/>
+    <path d="M35,65 L22,28 L55,58 Z" fill="#E0D2BE" stroke="#C4B8A6" stroke-width="1.2"/>
+    <ellipse cx="42" cy="84" rx="8" ry="5.5" fill="${glow(on("eye"),"#5B8DEF")}" stroke="#2F6FED" stroke-width="1.2"/>
+    <ellipse cx="85" cy="105" rx="24" ry="17" fill="${glow(on("resp"),"#7EC8FF")}" stroke="#2F6FED" stroke-width="1.2"/>
+    <ellipse cx="120" cy="112" rx="15" ry="13" fill="${glow(on("heart"),"#FF8A8A")}" stroke="#C0392B" stroke-width="1.2"/>
+    <ellipse cx="165" cy="130" rx="20" ry="13" fill="${glow(on("liver"),"#E8B86D")}" stroke="#C48A3A" stroke-width="1.2"/>
+    <ellipse cx="195" cy="138" rx="32" ry="20" fill="${glow(on("gi"),"#7DDBA0")}" stroke="#2DBE7C" stroke-width="1.2"/>
+    <ellipse cx="155" cy="148" rx="13" ry="10" fill="${glow(on("kidney"),"#7EC8E8")}" stroke="#3BB4E8" stroke-width="1.2"/>
+    <rect x="100" y="165" width="20" height="26" rx="7" fill="${glow(on("msk"),"#A8D08D")}" stroke="#5F8F6A" stroke-width="1.2"/>
+    <rect x="140" y="170" width="20" height="26" rx="7" fill="${glow(on("msk"),"#A8D08D")}" stroke="#5F8F6A" stroke-width="1.2"/>
+    <rect x="185" y="165" width="20" height="26" rx="7" fill="${glow(on("msk"),"#A8D08D")}" stroke="#5F8F6A" stroke-width="1.2"/>
+    <ellipse cx="140" cy="120" rx="95" ry="55" fill="none" stroke="${on("skin")?"#D4789A":"#EDE7DA"}" stroke-width="${on("skin")?4:1}" opacity="0.9"/>
+    ${on("parasite")?`<circle cx="220" cy="95" r="7" fill="#C9A227"/><circle cx="235" cy="125" r="6" fill="#C9A227"/><text x="228" y="80" font-size="10" fill="#8A7020" font-family="sans-serif">寄生虫</text>`:""}
+    ${on("immune")?`<circle cx="105" cy="135" r="5" fill="#8B8BE8"/><circle cx="210" cy="150" r="5" fill="#8B8BE8"/><circle cx="175" cy="110" r="5" fill="#8B8BE8"/>`:""}
+  </g>`;
+  const catSvg=`
+  <g transform="translate(340,22)">
+    <text x="120" y="8" text-anchor="middle" font-size="12" font-weight="700" fill="#1C2420" font-family="sans-serif">猫</text>
+    <ellipse cx="155" cy="125" rx="88" ry="52" fill="#F0E6D6" stroke="#C4B8A6" stroke-width="1.5"/>
+    <ellipse cx="75" cy="95" rx="38" ry="34" fill="#F0E6D6" stroke="#C4B8A6" stroke-width="1.5"/>
+    <path d="M55,72 L48,36 L78,62 Z" fill="#E0D2BE" stroke="#C4B8A6" stroke-width="1.2"/>
+    <path d="M95,68 L105,32 L118,62 Z" fill="#E0D2BE" stroke="#C4B8A6" stroke-width="1.2"/>
+    <ellipse cx="65" cy="92" rx="9" ry="6" fill="${glow(on("eye"),"#5B8DEF")}" stroke="#2F6FED" stroke-width="1.2"/>
+    <ellipse cx="105" cy="108" rx="22" ry="16" fill="${glow(on("resp"),"#7EC8FF")}" stroke="#2F6FED" stroke-width="1.2"/>
+    <ellipse cx="140" cy="115" rx="14" ry="12" fill="${glow(on("heart"),"#FF8A8A")}" stroke="#C0392B" stroke-width="1.2"/>
+    <ellipse cx="180" cy="132" rx="18" ry="12" fill="${glow(on("liver"),"#E8B86D")}" stroke="#C48A3A" stroke-width="1.2"/>
+    <ellipse cx="205" cy="142" rx="30" ry="18" fill="${glow(on("gi"),"#7DDBA0")}" stroke="#2DBE7C" stroke-width="1.2"/>
+    <ellipse cx="170" cy="150" rx="12" ry="9" fill="${glow(on("kidney"),"#7EC8E8")}" stroke="#3BB4E8" stroke-width="1.2"/>
+    <rect x="125" y="168" width="18" height="24" rx="6" fill="${glow(on("msk"),"#A8D08D")}" stroke="#5F8F6A" stroke-width="1.2"/>
+    <rect x="165" y="172" width="18" height="24" rx="6" fill="${glow(on("msk"),"#A8D08D")}" stroke="#5F8F6A" stroke-width="1.2"/>
+    <ellipse cx="155" cy="125" rx="88" ry="52" fill="none" stroke="${on("skin")?"#D4789A":"#EDE7DA"}" stroke-width="${on("skin")?4:1}" opacity="0.9"/>
+    <path d="M242,120 Q275,88 268,155" fill="none" stroke="#C4B8A6" stroke-width="7" stroke-linecap="round"/>
+    ${on("parasite")?`<circle cx="230" cy="105" r="7" fill="#C9A227"/><circle cx="90" cy="78" r="6" fill="#C9A227"/>`:""}
+    ${on("immune")?`<circle cx="130" cy="145" r="5" fill="#8B8BE8"/><circle cx="210" cy="158" r="5" fill="#8B8BE8"/>`:""}
+  </g>`;
+
+  const legend=[
+    ["#7EC8FF","呼吸"],["#FF8A8A","心脏"],["#7DDBA0","消化"],["#7EC8E8","肾/泌尿"],
+    ["#E8B86D","肝胆"],["#A8D08D","关节"],["#5B8DEF","眼部"],["#D4789A","皮肤"],["#C9A227","寄生虫"],["#8B8BE8","免疫"]
+  ];
+  const parts=[];
+  if(on("resp"))parts.push("呼吸道");
+  if(on("heart"))parts.push("心脏");
+  if(on("gi"))parts.push("消化道");
+  if(on("kidney"))parts.push("肾/泌尿");
+  if(on("liver"))parts.push("肝胆");
+  if(on("msk"))parts.push("关节骨骼");
+  if(on("eye"))parts.push("眼部");
+  if(on("skin"))parts.push("皮肤被毛");
+  if(on("parasite"))parts.push("寄生虫");
+  if(on("immune"))parts.push("免疫系统");
+
+  return `<div class="sc-body-map">
+    <div class="hdr">
+      <div>
+        <div class="title">📍 临床作用部位示意图</div>
+        <div class="sub">高亮 = 本场景治疗/用药主要作用部位</div>
+      </div>
+      <div class="sub">${esc(sc.title||"")}</div>
+    </div>
+    <svg viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg">
+      ${showDog?dogSvg:""}
+      ${showCat?catSvg:""}
+    </svg>
+    <div class="zone-legend">
+      ${parts.map(t=>`<span class="anno hot">${t}</span>`).join("")}
+      ${legend.map(([c,n])=>`<span class="anno" style="background:${c}33;color:#333;border-color:${c}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:4px"></span>${n}</span>`).join("")}
+    </div>
+  </div>`;
+}
+
+function renderBodyMap(p){
+  const ai=p.ai||{};
+  const systems=detectSystems(p);
+  const on=(k)=>systems.includes(k);
+  const labels={
+    resp:"呼吸/呼吸道", eye:"眼部", skin:"皮肤/被毛", msk:"关节/骨骼",
+    gi:"消化道", kidney:"泌尿/肾脏", liver:"肝胆", heart:"心脏/循环",
+    parasite:"体内外寄生虫", immune:"免疫系统", tumor:"肿瘤病灶", blood:"造血/血液", pain:"神经/疼痛"
+  };
+  const annos=systems.map((k,i)=>`<span class="anno ${i===0?"hot":""}">${labels[k]||k}</span>`).join("");
+
+  // region styles
+  const R=(id,fill,stroke)=>`fill="${fill}" stroke="${stroke}" stroke-width="1.2"`;
+  const glow=(on,base)=> on ? base : "#EDE7DA";
+
+  const svg=`
+<svg viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dog -->
+  <g transform="translate(10,18)">
+    <text x="90" y="14" text-anchor="middle" font-size="13" font-weight="700" fill="#1C2420" font-family="sans-serif">犬</text>
+    <!-- body base -->
+    <ellipse cx="130" cy="130" rx="88" ry="52" fill="#F0E6D6" stroke="#C4B8A6" stroke-width="1.5"/>
+    <ellipse cx="58" cy="100" rx="38" ry="32" fill="#F0E6D6" stroke="#C4B8A6" stroke-width="1.5"/>
+    <!-- ear -->
+    <path d="M40,78 L28,42 L58,72 Z" fill="#E0D2BE" stroke="#C4B8A6" stroke-width="1.2"/>
+    <!-- eye -->
+    <ellipse cx="48" cy="96" rx="7" ry="5" ${R("", glow(on("eye"),"#5B8DEF"), "#2F6FED")}/>
+    <!-- nose -->
+    <ellipse cx="30" cy="108" rx="6" ry="4" fill="#6B5B4B"/>
+    <!-- respiratory throat/lung -->
+    <ellipse cx="88" cy="118" rx="22" ry="16" ${R("", glow(on("resp"),"#7EC8FF"), "#2F6FED")}/>
+    <!-- heart -->
+    <ellipse cx="118" cy="122" rx="14" ry="12" ${R("", glow(on("heart"),"#FF8A8A"), "#C0392B")}/>
+    <!-- liver -->
+    <ellipse cx="155" cy="138" rx="18" ry="12" ${R("", glow(on("liver"),"#E8B86D"), "#C48A3A")}/>
+    <!-- gi -->
+    <ellipse cx="175" cy="145" rx="28" ry="18" ${R("", glow(on("gi"),"#7DDBA0"), "#2DBE7C")}/>
+    <!-- kidney -->
+    <ellipse cx="145" cy="155" rx="12" ry="9" ${R("", glow(on("kidney"),"#7EC8E8"), "#3BB4E8")}/>
+    <!-- joints -->
+    <rect x="95" y="168" width="18" height="22" rx="6" ${R("", glow(on("msk"),"#A8D08D"), "#5F8F6A")}/>
+    <rect x="130" y="172" width="18" height="22" rx="6" ${R("", glow(on("msk"),"#A8D08D"), "#5F8F6A")}/>
+    <rect x="165" y="168" width="18" height="22" rx="6" ${R("", glow(on("msk"),"#A8D08D"), "#5F8F6A")}/>
+    <!-- skin outline -->
+    <ellipse cx="130" cy="130" rx="88" ry="52" fill="none" stroke="${glow(on("skin"),"#D4789A")}" stroke-width="${on("skin")?3.5:1}" opacity="0.85"/>
+    <!-- parasite marks -->
+    ${on("parasite")?`<circle cx="200" cy="110" r="6" fill="#C9A227" opacity="0.9"/><circle cx="215" cy="135" r="5" fill="#C9A227" opacity="0.8"/>`:""}
+    <!-- immune dots -->
+    ${on("immune")?`<circle cx="100" cy="145" r="4" fill="#8B8BE8"/><circle cx="200" cy="155" r="4" fill="#8B8BE8"/><circle cx="170" cy="120" r="4" fill="#8B8BE8"/>`:""}
+    <!-- tumor -->
+    ${on("tumor")?`<circle cx="160" cy="125" r="9" fill="#C0392B" opacity="0.75"/>`:""}
+    <!-- labels -->
+    ${on("eye")?`<text x="20" y="92" font-size="9" fill="#2F6FED" font-family="sans-serif">眼部</text>`:""}
+    ${on("resp")?`<text x="70" y="100" font-size="9" fill="#2F6FED" font-family="sans-serif">呼吸道</text>`:""}
+    ${on("heart")?`<text x="108" y="108" font-size="9" fill="#C0392B" font-family="sans-serif">心脏</text>`:""}
+    ${on("gi")?`<text x="168" y="140" font-size="9" fill="#2DBE7C" font-family="sans-serif">消化</text>`:""}
+    ${on("msk")?`<text x="100" y="210" font-size="9" fill="#5F8F6A" font-family="sans-serif">关节</text>`:""}
+  </g>
+
+  <!-- Cat -->
+  <g transform="translate(340,18)">
+    <text x="110" y="14" text-anchor="middle" font-size="13" font-weight="700" fill="#1C2420" font-family="sans-serif">猫</text>
+    <ellipse cx="150" cy="135" rx="80" ry="48" fill="#F0E6D6" stroke="#C4B8A6" stroke-width="1.5"/>
+    <ellipse cx="80" cy="105" rx="34" ry="30" fill="#F0E6D6" stroke="#C4B8A6" stroke-width="1.5"/>
+    <!-- ears -->
+    <path d="M62,82 L52,48 L78,72 Z" fill="#E0D2BE" stroke="#C4B8A6" stroke-width="1.2"/>
+    <path d="M92,78 L98,46 L112,74 Z" fill="#E0D2BE" stroke="#C4B8A6" stroke-width="1.2"/>
+    <!-- eye -->
+    <ellipse cx="70" cy="100" rx="8" ry="6" ${R("", glow(on("eye"),"#5B8DEF"), "#2F6FED")}/>
+    <!-- resp -->
+    <ellipse cx="105" cy="118" rx="20" ry="15" ${R("", glow(on("resp"),"#7EC8FF"), "#2F6FED")}/>
+    <!-- heart -->
+    <ellipse cx="135" cy="122" rx="13" ry="11" ${R("", glow(on("heart"),"#FF8A8A"), "#C0392B")}/>
+    <!-- liver -->
+    <ellipse cx="168" cy="140" rx="16" ry="11" ${R("", glow(on("liver"),"#E8B86D"), "#C48A3A")}/>
+    <!-- gi -->
+    <ellipse cx="190" cy="148" rx="26" ry="17" ${R("", glow(on("gi"),"#7DDBA0"), "#2DBE7C")}/>
+    <!-- kidney -->
+    <ellipse cx="160" cy="158" rx="11" ry="8" ${R("", glow(on("kidney"),"#7EC8E8"), "#3BB4E8")}/>
+    <!-- joints -->
+    <rect x="115" y="172" width="16" height="20" rx="5" ${R("", glow(on("msk"),"#A8D08D"), "#5F8F6A")}/>
+    <rect x="150" y="175" width="16" height="20" rx="5" ${R("", glow(on("msk"),"#A8D08D"), "#5F8F6A")}/>
+    <!-- skin -->
+    <ellipse cx="150" cy="135" rx="80" ry="48" fill="none" stroke="${glow(on("skin"),"#D4789A")}" stroke-width="${on("skin")?3.5:1}" opacity="0.85"/>
+    <!-- tail -->
+    <path d="M228,130 Q255,100 250,150" fill="none" stroke="#C4B8A6" stroke-width="6" stroke-linecap="round"/>
+    ${on("parasite")?`<circle cx="210" cy="115" r="6" fill="#C9A227" opacity="0.9"/><circle cx="95" cy="88" r="5" fill="#C9A227" opacity="0.85"/>`:""}
+    ${on("immune")?`<circle cx="125" cy="150" r="4" fill="#8B8BE8"/><circle cx="195" cy="160" r="4" fill="#8B8BE8"/>`:""}
+    ${on("tumor")?`<circle cx="175" cy="130" r="8" fill="#C0392B" opacity="0.75"/>`:""}
+    ${on("eye")?`<text x="48" y="95" font-size="9" fill="#2F6FED" font-family="sans-serif">眼部</text>`:""}
+    ${on("resp")?`<text x="88" y="105" font-size="9" fill="#2F6FED" font-family="sans-serif">呼吸道</text>`:""}
+    ${on("gi")?`<text x="185" y="145" font-size="9" fill="#2DBE7C" font-family="sans-serif">消化</text>`:""}
+    ${on("kidney")?`<text x="155" y="175" font-size="9" fill="#3BB4E8" font-family="sans-serif">肾/泌尿</text>`:""}
+  </g>
+</svg>`;
+
+  const mech=ai.mechanism||"（点击「AI 生成」获取作用机理说明）";
+  return `<div class="body-map">
+    <div class="mm-head">
+      <div>
+        <div class="mm-title">犬猫作用部位示意图</div>
+        <div class="mm-sub">高亮区域 = 产品主要作用部位</div>
+      </div>
+      <div class="mm-sub">自动识别 · ${esc(p.name||"")}</div>
+    </div>
+    ${svg}
+    <div class="anno-list">${annos||'<span class="anno">待生成</span>'}</div>
+    <div class="mech-box">
+      <div class="t">⚙️ 作用机理</div>
+      <div class="b">${esc(mech)}</div>
+    </div>
+    <div class="cap">示意图用于理解作用部位，实际以说明书与执业兽医判断为准</div>
+  </div>`;
+}
+
 function renderScenarioMap(p){
   const ai=p.ai||{};
   const scenes=splitPoints(ai.scenarios,5);
@@ -765,7 +1057,7 @@ function renderBrief(p){
   const ai=p.ai||{};
   return `
   <div class="brief-split">
-    <div class="left">${renderScenarioMap(p)}</div>
+    <div class="left">${renderBodyMap(p)}${renderScenarioMap(p)}</div>
     <div class="right">
       <div class="brief">
         <h4>用法用量与配伍说明</h4>
@@ -859,10 +1151,11 @@ function buildPrompt(p){
     .map(s=>`${s.title}（${s.signs}）→ ${s.path}`).join("；");
   return `你是资深宠物临床兽医与产品专员。禁止写「报价单未提供/未载明」「待核实」「详见说明书」。必须给出具体成分、剂量数字、配伍与禁忌。
 
-六节输出，标题严格如下：
+七节输出，标题严格如下：
 【主要成分】
 【用法用量】
 【应用场景】
+【作用机理】
 【推荐配伍】
 【配伍禁忌】
 【使用禁忌】
@@ -872,6 +1165,7 @@ function buildPrompt(p){
 - 【应用场景】用短句列出 3–5 个临床场景（疾病/症状 → 何时用）。
 - 【推荐配伍】写可联用的药物/营养品及联用目的（2–4 条）。
 - 【配伍禁忌】写禁止或需谨慎合用的药物及原因（2–4 条，无则写同类原则）。
+- 【作用机理】用通俗语言写药物如何起效（靶点/路径/结果），50–100 字。
 - 【使用禁忌】写禁用/慎用动物情况（肝肾不全、孕畜、幼龄、过敏等）。
 
 产品：${p.name||"未知"}｜品牌：${p.brand||"未知"}｜类别：${p.category||""}｜角色：${p.role||""}
@@ -922,6 +1216,7 @@ function parseAi(text){
     scenarios:pick("应用场景","适用症状","场景","适用场景"),
     pairs:pick("推荐配伍","配伍推荐","联合用药","联用"),
     pairBan:pick("配伍禁忌","药物相互作用","相互作用"),
+    mechanism:pick("作用机理","作用机制","机理","机制"),
     contra:pick("使用禁忌","禁忌症","使用注意","注意事项","注意")
   };
 }
@@ -946,6 +1241,7 @@ function generateForProduct(id){
       scenarios:parts.scenarios||"",
       pairs:parts.pairs||"",
       pairBan:parts.pairBan||"",
+      mechanism:parts.mechanism||"",
       cautions:parts.contra||parts.cautions||"",
       generatedAt:new Date().toLocaleString("zh-CN")
     };
@@ -1148,6 +1444,7 @@ function openScenarioSheet(id){
       <span class="tag ${sc.sp==="dog"?"dog":sc.sp==="cat"?"cat":"both"}">${spL}</span>
       <span class="tag" style="background:${s.color}22;color:${s.color}">${s.icon} ${s.name}</span>
     </div>
+    ${renderScenarioBodyMap(sc)}
     <div class="card">
       <div class="row-l"><b>症状：</b>${sc.signs}</div>
       <div class="row-l"><b>检测：</b>${sc.dx}</div>
