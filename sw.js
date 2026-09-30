@@ -1,5 +1,5 @@
 /* 犬猫临床应用场景选品 · Service Worker */
-const CACHE = 'hld-vet-app-v2';
+const CACHE = 'hld-vet-app-v3';
 const ASSETS = [
   './',
   './index.html',
